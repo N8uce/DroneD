@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Подтверждение заказа</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <h1>Подтверждение заказа</h1>
+    <p>Спасибо за ваш заказ!</p>
+    <p>Продукт: {{ order.product.name }}</p>
+    <p>Количество: {{ order.quantity }}</p>
+    <p>Адрес доставки: {{ order.address }}</p>
+    <p>Статус: {{ order.status }}</p>
+    <a href="{% url 'shop' %}">Вернуться в магазин</a>
+</body>
+</html>

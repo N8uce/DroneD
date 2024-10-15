@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Магазин</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <a href="{% url 'index' %}">Вернуться в главное</a>
+    <h1>Наши Продукты</h1>
+    <div class="product-list">
+        {% for product in products %}
+            <div class="product-item">
+                {% if product.image %}
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="primg">
+                {% endif %}
+                <h2><a href="{% url 'product_detail' product.id %}">{{ product.name }}</a></h2>
+                <p>{{ product.description }}</p>
+                <p>Цена: {{ product.price }} ₽</p>
+                <p>Тип: {{ product.get_product_type_display }}</p>
+            </div>
+        {% endfor %}
+    </div>
+    
+</body>
+</html>
+

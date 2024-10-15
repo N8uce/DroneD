@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Оформление заказа</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="https://api-maps.yandex.ru/2.1/?apikey=d5d3bb05-d1db-494f-bd26-5e9faae9dad4&lang=ru_RU"></script>
+    <script>
+        async function fetchSuggestions(query) {
+            const response = await fetch(`https://geocode-maps.yandex.ru/1.x/?apikey=d5d3bb05-d1db-494f-bd26-5e9faae9dad4&format=json&geocode=${query}&results=5`);
+            const results = await response.json();
+            return results.response.GeoObjectCollection.featureMember;
+        }
+
+        function initAutocomplete() {
+            const input = document.getElementById('autocomplete');
+            input.addEventListener('input', async () => {
+                const query = input.value;
+                if (query.length < 3) return;
+                const suggestions = await fetchSuggestions(query);
+                const dataList = document.getElementById('suggestions');
+                dataList.innerHTML = '';
+                suggestions.forEach(suggestion => {
+                    const address = suggestion.GeoObject.metaDataProperty.GeocoderMetaData.text;
+                    const option = document.createElement('option');
+                    option.value = address;
+                    dataList.appendChild(option);
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', initAutocomplete);
+    </script>
+</head>
+<body>
+    <h1>Оформление заказа</h1>
+    <div class="cart">
+        {% for item in cart_items %}
+            <div class="cart-item">
+                <h2>{{ item.product.name }}</h2>
+                <p>{{ item.product.description }}</p>
+                <p>Количество: {{ item.quantity }}</p>
+                <p>Цена: {{ item.product.price }} ₽</p>
+            </div>
+        {% endfor %}
+    </div>
+    <form method="post">
+        {% csrf_token %}
+        <input list="suggestions" id="autocomplete" name="address" placeholder="Введите адрес...">
+        <datalist id="suggestions"></datalist>
+        <button type="submit">Оформить заказ</button>
+    </form>
+    <a href="{% url 'shop' %}">Вернуться в магазин</a>
+</body>
+</html>

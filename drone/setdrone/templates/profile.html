@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Личный кабинет</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <h1>Личный кабинет</h1>
+    <p>Имя пользователя: {{ request.user.username }}</p>
+    <p>Email: {{ request.user.email }}</p>
+    <p>Номер телефона: {{ request.user.profile.phone_number }}</p>
+    <p>Дата рождения: {{ request.user.profile.birth_date }}</p>
+    
+    {% if request.user.is_staff %}
+        <a href="/admin/">Админ меню</a>
+    {% endif %}
+    
+    <a href="{% url 'index' %}">Вернуться на главную</a>
+</body>
+</html>
