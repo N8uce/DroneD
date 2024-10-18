@@ -13,8 +13,14 @@ def index(request):
     return render(request, "index.html")
 
 def shop(request):
-    products = Product.objects.all()
+    category = request.GET.get('category')  # Получаем категорию из параметров запроса
+    if category:
+        products = Product.objects.filter(product_type=category)
+    else:
+        products = Product.objects.all()  # Если категория не выбрана, выводим все товары
+
     return render(request, 'shop.html', {'products': products})
+
 
 
 @login_required

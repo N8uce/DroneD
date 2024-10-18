@@ -8,8 +8,26 @@
 </head>
 <body>
     <a href="{% url 'index' %}">Вернуться в главное</a>
-    <h1>Наши Продукты</h1>
+<div class="main">
+    <div class="shop-container">
+        <!-- Боковая панель с категориями -->
+        <div class="category-sidebar">
+            <h1>Категории</h1>
+            <ul>
+                <li><a href="{% url 'shop' %}">Все</a></li>
+                <li><a href="{% url 'shop' %}?category=fruit">Фрукты</a></li>
+                <li><a href="{% url 'shop' %}?category=treat">Лакомства</a></li>
+                <!-- Добавьте дополнительные категории, если нужно -->
+            </ul>
+        </div>
+
+        <!-- Список товаров -->
+    </div>
+
     <div class="product-list">
+        
+        <h1>Наши Продукты</h1>
+        <div class="pr">
         {% for product in products %}
             <div class="product-item">
                 {% if product.image %}
@@ -20,9 +38,11 @@
                 <p>Цена: {{ product.price }} ₽</p>
                 <p>Тип: {{ product.get_product_type_display }}</p>
             </div>
+        {% empty %}
+            <p>Товары данной категории отсутствуют.</p>
         {% endfor %}
     </div>
-    
+  </div>
+</div>
 </body>
 </html>
-
