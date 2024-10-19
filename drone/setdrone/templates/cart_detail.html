@@ -1,31 +1,46 @@
 <!DOCTYPE html>
 {% load static %}
-<html lang="ru">
+{% load custom_filters %}
+
+<html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Корзина</title>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
-    <h1>Корзина</h1>
-    <div class="cart">
-        {% for item in cart_items %}
-            <div class="cart-item">
-                <h2>{{ item.product.name }}</h2>
-                <p>{{ item.product.description }}</p>
-                <p>Количество: {{ item.quantity }}</p>
-                <p>Цена: {{ item.product.price }} ₽</p>
-                <form action="{% url 'remove_from_cart' item.product.id %}" method="post">
-                    {% csrf_token %}
-                    <button type="submit">Удалить</button>
-                </form>
-            </div>
-        {% endfor %}
-    </div>
-    <form action="{% url 'order_from_cart' %}" method="get">
-        <button type="submit">Перейти к заказу</button>
-    </form>
+    <h1>Ваша корзина</h1>
+    
+    {% if cart_items %}
+        <div class="cart-list">
+            {% for item in cart_items %}
+                <div class="cart-item">
+                    <p>{{ item.product.name }} - {{ item.quantity }} шт.</p>
+                    <p>Цена: {{ item.product.price }} ₽ за шт.</p>
+                    <p>Итоговая цена: {{ item.product.price|multiply:item.quantity }} ₽</p>
+                    {% if user.is_authenticated %}
+                        <form action="{% url 'remove_from_cart' item.product.id %}" method="post">
+                            {% csrf_token %}
+                            <button type="submit">Удалить</button>
+                        </form>
+                    {% else %}
+                        <form action="{% url 'remove_from_cart_session' item.product.id %}" method="post">
+                            {% csrf_token %}
+                            <button type="submit">Удалить</button>
+                        </form>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+        <form action="{% url 'order_from_cart' %}" method="post">
+            {% csrf_token %}
+            <button type="submit">Оформить заказ</button>
+        </form>
+    {% else %}
+        <p>Ваша корзина пуста.</p>
+    {% endif %}
     <a href="{% url 'shop' %}">Вернуться в магазин</a>
 </body>
 </html>
+
 

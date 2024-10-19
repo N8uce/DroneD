@@ -35,6 +35,11 @@
 </head>
 <body>
     <h1>Оформление заказа</h1>
+    
+    {% if error %}
+        <div class="error">{{ error }}</div>
+    {% endif %}
+
     <div class="cart">
         {% for item in cart_items %}
             <div class="cart-item">
@@ -45,12 +50,15 @@
             </div>
         {% endfor %}
     </div>
+    
     <form method="post">
         {% csrf_token %}
-        <input list="suggestions" id="autocomplete" name="address" placeholder="Введите адрес...">
+        <input list="suggestions" id="autocomplete" name="address" placeholder="Введите адрес..." required>
         <datalist id="suggestions"></datalist>
         <button type="submit">Оформить заказ</button>
     </form>
+    
     <a href="{% url 'shop' %}">Вернуться в магазин</a>
 </body>
 </html>
+

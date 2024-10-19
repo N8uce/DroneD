@@ -150,3 +150,14 @@ a {
 .category-sidebar ul li a:hover {
     text-decoration: underline;
 }
+.cart{
+
+}
+
+.cart-item-img {
+    width: 100px;  /* Ширина картинки */
+    height: 100px; /* Высота картинки */
+    object-fit: cover; /* Обеспечивает корректное обрезание изображения без искажений */
+    border-radius: 5px; /* Скругление углов (опционально) */
+    margin-right: 10px; /* Отступ между картинкой и текстом */
+}

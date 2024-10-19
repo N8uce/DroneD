@@ -7,7 +7,17 @@
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
-    <a href="{% url 'index' %}">Вернуться в главное</a>
+    <div class="topshop">
+
+    <a href="{% url 'index' %}" class="index">Вернуться в главное</a>
+    
+    
+        
+   <a href="{% url 'cart_detail' %}" class="cart">Перейти в корзину</a>
+        
+   
+    
+   </div>
 <div class="main">
     <div class="shop-container">
         <!-- Боковая панель с категориями -->
