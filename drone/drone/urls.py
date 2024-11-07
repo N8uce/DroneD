@@ -25,7 +25,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('shop/', views.shop, name='shop'),  # Магазин
     path('product/<int:product_id>/', views.product_detail, name='product_detail'),
-    path('add-to-cart/<int:product_id>/', views.add_to_cart, name='add_to_cart'),
+    path('add_to_cart/<int:product_id>/', views.add_to_cart, name='add_to_cart'),
     path('cart/', views.cart_detail, name='cart_detail'),
     path('remove-from-cart/<int:product_id>/', views.remove_from_cart, name='remove_from_cart'),
     path('order-from-cart/', views.order_from_cart, name='order_from_cart'),
@@ -35,8 +35,9 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('profile/', views.profile, name='profile'),
-
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+
 
 
 

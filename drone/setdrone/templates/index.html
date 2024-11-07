@@ -10,11 +10,11 @@
 
 <body>
     <header>
-        <div class="topbar">
-            <div id="logo">
-            <h1>DroneD</h1>
-            <img src="{% static 'img/logo.png' %}" alt="logo">
-             </div>
+            <div class="logo">
+				<img src="../static/img/logo.png" alt="logo">
+				<h1>DroneD</h1>
+            </div>
+			<div class="authorization">
             {% if user.is_authenticated %}
             <a href="{% url 'profile' %}">Личный кабинет</a>
             <a href="{% url 'logout' %}">Выйти</a>
@@ -25,26 +25,101 @@
             </div>
             {% endif %}
             {% block content %}{% endblock %}
-        </div>
+		   </div>
     </header>
 
     <div class="video-background">
         <video autoplay muted loop id="myVideo">
-            <source src="{% static 'video/back.mp4' %}" type="video/mp4">
+            <source src="../static/video/back.mp4" type="video/mp4">
             Ваш браузер не поддерживает видео.
         </video>
         <div class="overlay-content">
-            
-        Добро пожаловать в DroneD! Ваши любимые продукты—теперь в небе! С нами покупки становятся быстрее и удобнее
-        благодаря уникальной доставке дронами. Забыли купить что-то важное? Закажите, и наш дрон доставит это к вашей
-        двери в считанные минуты. Откройте для себя будущее покупок сегодня с DroneD!
-
-        <a id="shop-link" href="/shop">Перейти в магазин</a>
-    
-        </div>
+			<div class="logo">
+				<img src="../static/img/logo.png" alt="logo">    
+				<h1>DroneD</h1> 
+			</div>
+			Добро пожаловать в DroneD! Ваши любимые продукты—теперь в небе! Откройте для себя будущее покупок сегодня с DroneD!
+			
+			<a id="shop-link" href="/shop">Перейти в магазин</a>
+		</div>
+        
     </div>
-    
-
+<div class="about_us">
+<div>
+<h1>Почему выбирают нас?</h1>
+<p>
+С нами покупки становятся быстрее и удобнее
+благодаря уникальной доставке дронами. Забыли купить что-то важное? Закажите, и наш дрон доставит это к вашей
+двери в считанные минуты.</p>
+</div>
+<img id="drone" src="../static/img/drone.jpg" alt="drone">
+</div>    
+<hr>
+<div class="how_works">
+	<h1>Как мы работаем</h1>
+	<div class="stages">
+		<div class="stage">
+		<h2>Укажите свое местоположение</h2>
+		<p>Ищите свою улицу в списке. Наши дроны быстро доставят вам груз.
+		Вашей улицы еще нет в списке? Оставьте отзыв, мы всегда готовы расширятся!</p>
+		</div>
+		<div class="stage">
+		<h2>Приготовьтесь к доставке</h2>
+		<p>Мы определим место доставки и поместим посылку в наиболее безопасное
+		место как для вас, так и для беспилотника. 
+		Так же убедитесь, что на вашем участке нет препятствий.
+		Мы отправим вам текстовые сообщения, чтобы сообщить,
+		что мы уже в пути, и убедиться, что вы готовы получить заказ.</p>
+		</div>
+		<div class="stage">
+		<h2>Забирайте свой заказ</h2>
+		<p>
+		Наши дроны запрограммированы таким образом, чтобы он опускал посылки 
+		с высоты 80 футов! Благодаря датчикам и очень прочным тросам посылки
+		весом до 10 фунтов доставляются аккуратно, а затем дрон плавно
+		поднимается и улетает.
+		Службы доставки могут быть временно недоступны из-за сильного ветра 
+		или других неблагоприятных погодных условий в вашем регионе,
+		и мы возобновим обслуживание, как только условия улучшатся.
+		</p>
+		</div>
+	</div>
+</div>
+<hr>
+<div class="why_drones">
+	<h1>Почему стоит пользоваться доставкой дронами</h1>
+	<div class="stages">
+		<div class="stage">
+			<h2>Это безопасно</h2>
+			<p>Доставка работает с высокой точностью и имеет безупречную репутацию
+			в сфере безопасности.</p>
+		</div>
+		<div class="stage">
+			<h2>Это быстро</h2>
+			<p>Мы работаем быстро и можем доставить вашу посылку за считанные минуты</p>
+		</div>
+		<div class="stage">
+			<h2>Это полезно экологии</h2>
+			<p>Каждый полёт дрона сокращает количество машин на дорогах, 
+			уменьшая выбросы углекислого газа.</p>
+		</div>
+	</div>
+	
+</div>
+<footer>
+	<div class="logo">
+		<img src="../static/img/logo.png" alt="logo">
+		<h1>DroneD</h1>
+    </div>
+	<div id="social_media">
+		 <a href="https://www.instagram.com/yourusername" target="_blank">
+		 <img class="icon" src="../static/img/IN.svg" alt="Instagram Icon"></a>
+		 <a href="https://www.facebook.com/yourusername" target="_blank">
+		 <img class="icon" src="../static/img/FB.svg" alt="Facebook Icon"></a>
+		 <a href="https://www.twitter.com/yourusername" target="_blank">
+		 <img class="icon" src="../static/img/Twitter.svg" alt="Twitter Icon"></a>
+	 </div>
+</footer>
 </body>
 
 </html>

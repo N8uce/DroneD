@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 {% load static %}
 {% load custom_filters %}
-
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -10,7 +9,6 @@
 </head>
 <body>
     <h1>Ваша корзина</h1>
-    
     {% if cart_items %}
         <div class="cart-list">
             {% for item in cart_items %}
@@ -32,6 +30,7 @@
                 </div>
             {% endfor %}
         </div>
+        <p>Общая сумма: {{ total_price }} ₽</p> <!-- Add this line to display the total price -->
         <form action="{% url 'order_from_cart' %}" method="post">
             {% csrf_token %}
             <button type="submit">Оформить заказ</button>
@@ -42,5 +41,6 @@
     <a href="{% url 'shop' %}">Вернуться в магазин</a>
 </body>
 </html>
+
 
 

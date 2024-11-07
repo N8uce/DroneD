@@ -5,6 +5,33 @@
     <meta charset="UTF-8">
     <title>{{ product.name }}</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="{% static 'js/jquery.min.js' %}"></script>
+    <script>
+        $(document).ready(function() {
+            $('form').on('submit', function(event) {
+                event.preventDefault(); // Останавливаем обычное отправление формы
+
+                const form = $(this);
+                const url = form.attr('action'); // Получаем URL из атрибута action
+                const data = form.serialize(); // Сериализуем данные формы
+
+                $.ajax({
+                    type: 'POST',
+                    url: url,
+                    data: data,
+                    success: function(response) {
+                        // Обновляем текст кнопки или добавляем уведомление
+                        $('#add-to-cart-button').text('Товар добавлен в корзину');
+                        // Можно также обновить количество товаров в корзине
+                        $('#total-cart-count').text(parseInt($('#total-cart-count').text()) + 1);
+                    },
+                    error: function() {
+                        alert('Ошибка при добавлении товара в корзину.');
+                    }
+                });
+            });
+        });
+    </script>
 </head>
 <body>
     <a href="{% url 'shop' %}">Вернуться в магазин</a>
@@ -16,7 +43,8 @@
     {% endif %}
     <form action="{% url 'add_to_cart' product.id %}" method="post">
         {% csrf_token %}
-        <button type="submit">Добавить в корзину</button>
+        <button type="submit" id="add-to-cart-button">Добавить в корзину</button>
     </form>
 </body>
 </html>
+

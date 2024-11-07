@@ -6,26 +6,65 @@
     <title>Оформление заказа</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <script src="https://api-maps.yandex.ru/2.1/?apikey=d5d3bb05-d1db-494f-bd26-5e9faae9dad4&lang=ru_RU"></script>
+    <script src="https://js.stripe.com/v3/"></script>
     <script>
-        async function fetchSuggestions(query) {
+        async function fetchAddressSuggestions(query) {
             const response = await fetch(`https://geocode-maps.yandex.ru/1.x/?apikey=d5d3bb05-d1db-494f-bd26-5e9faae9dad4&format=json&geocode=${query}&results=5`);
             const results = await response.json();
-            return results.response.GeoObjectCollection.featureMember;
+            return results.response.GeoObjectCollection.featureMember.map(suggestion => {
+                const addressParts = suggestion.GeoObject.metaDataProperty.GeocoderMetaData.Address.Components;
+                return {
+                    city: addressParts.find(part => part.kind === 'locality')?.name || '',
+                    street: addressParts.find(part => part.kind === 'street')?.name || '',
+                    house: addressParts.find(part => part.kind === 'house')?.name || ''
+                };
+            });
         }
 
         function initAutocomplete() {
-            const input = document.getElementById('autocomplete');
-            input.addEventListener('input', async () => {
-                const query = input.value;
-                if (query.length < 3) return;
-                const suggestions = await fetchSuggestions(query);
-                const dataList = document.getElementById('suggestions');
-                dataList.innerHTML = '';
+            const cityInput = document.getElementById('city');
+            const streetInput = document.getElementById('street');
+            const houseInput = document.getElementById('house');
+
+            cityInput.addEventListener('input', async () => {
+                if (cityInput.value.length < 3) return;
+                const suggestions = await fetchAddressSuggestions(cityInput.value);
+                const cityList = document.getElementById('city-suggestions');
+                cityList.innerHTML = '';
                 suggestions.forEach(suggestion => {
-                    const address = suggestion.GeoObject.metaDataProperty.GeocoderMetaData.text;
-                    const option = document.createElement('option');
-                    option.value = address;
-                    dataList.appendChild(option);
+                    if (suggestion.city) {
+                        const option = document.createElement('option');
+                        option.value = suggestion.city;
+                        cityList.appendChild(option);
+                    }
+                });
+            });
+
+            streetInput.addEventListener('input', async () => {
+                if (streetInput.value.length < 3) return;
+                const suggestions = await fetchAddressSuggestions(`${cityInput.value}, ${streetInput.value}`);
+                const streetList = document.getElementById('street-suggestions');
+                streetList.innerHTML = '';
+                suggestions.forEach(suggestion => {
+                    if (suggestion.street) {
+                        const option = document.createElement('option');
+                        option.value = suggestion.street;
+                        streetList.appendChild(option);
+                    }
+                });
+            });
+
+            houseInput.addEventListener('input', async () => {
+                if (houseInput.value.length < 1) return;
+                const suggestions = await fetchAddressSuggestions(`${cityInput.value}, ${streetInput.value}, ${houseInput.value}`);
+                const houseList = document.getElementById('house-suggestions');
+                houseList.innerHTML = '';
+                suggestions.forEach(suggestion => {
+                    if (suggestion.house) {
+                        const option = document.createElement('option');
+                        option.value = suggestion.house;
+                        houseList.appendChild(option);
+                    }
                 });
             });
         }
@@ -35,11 +74,9 @@
 </head>
 <body>
     <h1>Оформление заказа</h1>
-    
     {% if error %}
         <div class="error">{{ error }}</div>
     {% endif %}
-
     <div class="cart">
         {% for item in cart_items %}
             <div class="cart-item">
@@ -50,15 +87,61 @@
             </div>
         {% endfor %}
     </div>
-    
-    <form method="post">
+    <div class="total-price">
+        <h3>Общая сумма: {{ total_price }} ₽</h3>
+    </div>
+    <form action="{% url 'order_from_cart' %}" method="post" id="payment-form">
         {% csrf_token %}
-        <input list="suggestions" id="autocomplete" name="address" placeholder="Введите адрес..." required>
-        <datalist id="suggestions"></datalist>
+        
+        <input list="city-suggestions" id="city" name="city" placeholder="Город" required>
+        <datalist id="city-suggestions"></datalist>
+
+        <input list="street-suggestions" id="street" name="street" placeholder="Улица" required>
+        <datalist id="street-suggestions"></datalist>
+
+        <input list="house-suggestions" id="house" name="house" placeholder="Дом" required>
+        <datalist id="house-suggestions"></datalist>
+
+        <div class="form-row">
+            <label for="card-element">Кредитная или дебетовая карта</label>
+            <div id="card-element"></div>
+            <div id="card-errors" role="alert"></div>
+        </div>
         <button type="submit">Оформить заказ</button>
     </form>
     
-    <a href="{% url 'shop' %}">Вернуться в магазин</a>
+    <script>
+        var stripe = Stripe('pk_test_51QE73wJ53brjUdQgbKYUWNB04DGiDVaeFevWLAJip87Y9tMJ7Of9rGb0FZokSeaEGGscK3hAHmb7fQFDNY1GgTfC00gLo2tPnK');
+        var elements = stripe.elements();
+        var card = elements.create('card');
+        card.mount('#card-element');
+    
+        card.addEventListener('change', function(event) {
+            var displayError = document.getElementById('card-errors');
+            if (event.error) {
+                displayError.textContent = event.error.message;
+            } else {
+                displayError.textContent = '';
+            }
+        });
+    
+        var form = document.getElementById('payment-form');
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            stripe.createToken(card).then(function(result) {
+                if (result.error) {
+                    var errorElement = document.getElementById('card-errors');
+                    errorElement.textContent = result.error.message;
+                } else {
+                    var hiddenInput = document.createElement('input');
+                    hiddenInput.setAttribute('type', 'hidden');
+                    hiddenInput.setAttribute('name', 'stripeToken');
+                    hiddenInput.setAttribute('value', result.token.id);
+                    form.appendChild(hiddenInput);
+                    form.submit();
+                }
+            });
+        });
+    </script>
 </body>
 </html>
-

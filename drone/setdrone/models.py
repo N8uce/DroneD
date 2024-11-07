@@ -33,9 +33,15 @@ class Order(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
-    address = models.CharField(max_length=255)
+    city = models.CharField(max_length=100, default='Москва')
+    street = models.CharField(max_length=100,default='Тверская улица')
+    house = models.CharField(max_length=10,default='20')
     status = models.CharField(max_length=20, default='Pending')
     ordered_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Order {self.id} by {self.user}"
+
 
     def __str__(self):
         return f"Order {self.id} by {self.user}"

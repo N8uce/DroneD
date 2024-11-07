@@ -5,54 +5,96 @@
     <meta charset="UTF-8">
     <title>Магазин</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- Подключение jQuery -->
+    <style>
+        #cart-info {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 10px;
+            background: #28a745;
+            color: white;
+            border-radius: 5px;
+            transition: transform 0.3s ease;
+        }
+
+        .animated {
+            transform: scale(1.1); /* Увеличиваем элемент */
+            transition: transform 0.5s ease; /* Плавный переход */
+        }
+    </style>
 </head>
 <body>
     <div class="topshop">
-
-    <a href="{% url 'index' %}" class="index">Вернуться в главное</a>
-    
-    
-        
-   <a href="{% url 'cart_detail' %}" class="cart">Перейти в корзину</a>
-        
-   
-    
-   </div>
-<div class="main">
-    <div class="shop-container">
-        <!-- Боковая панель с категориями -->
-        <div class="category-sidebar">
-            <h1>Категории</h1>
-            <ul>
-                <li><a href="{% url 'shop' %}">Все</a></li>
-                <li><a href="{% url 'shop' %}?category=fruit">Фрукты</a></li>
-                <li><a href="{% url 'shop' %}?category=treat">Лакомства</a></li>
-                <!-- Добавьте дополнительные категории, если нужно -->
-            </ul>
+        <a href="{% url 'index' %}" class="index">Вернуться в главное</a>
+        <div id="cart-info">
+            <span>В корзине: <span id="cart-count">0</span> товара(ов)</span>
         </div>
-
-        <!-- Список товаров -->
+        <a href="{% url 'cart_detail' %}" class="cartshop">Смотреть корзину</a> <!-- Измененное название -->
     </div>
-
-    <div class="product-list">
-        
-        <h1>Наши Продукты</h1>
-        <div class="pr">
-        {% for product in products %}
-            <div class="product-item">
-                {% if product.image %}
-                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="primg">
-                {% endif %}
-                <h2><a href="{% url 'product_detail' product.id %}">{{ product.name }}</a></h2>
-                <p>{{ product.description }}</p>
-                <p>Цена: {{ product.price }} ₽</p>
-                <p>Тип: {{ product.get_product_type_display }}</p>
+    <div class="main">
+        <div class="shop-container">
+            <div class="category-sidebar">
+                <h1>Категории</h1>
+                <ul>
+                    <li><a href="{% url 'shop' %}">Все</a></li>
+                    <li><a href="{% url 'shop' %}?category=fruit">Фрукты</a></li>
+                    <li><a href="{% url 'shop' %}?category=treat">Лакомства</a></li>
+                </ul>
             </div>
-        {% empty %}
-            <p>Товары данной категории отсутствуют.</p>
-        {% endfor %}
+
+            <div class="product-list">
+                <h1>Наши Продукты</h1>
+                <div class="pr">
+                    {% for product in products %}
+                    <div class="product-item">
+                        {% if product.image %}
+                            <img src="{{ product.image.url }}" alt="{{ product.name }}" class="primg">
+                        {% endif %}
+                        <h2><a href="{% url 'product_detail' product.id %}">{{ product.name }}</a></h2>
+                        <p>{{ product.description }}</p>
+                        <p>Цена: {{ product.price }} ₽</p>
+                        <p>Тип: {{ product.get_product_type_display }}</p>
+                        <button class="add-to-cart-btn" data-product-id="{{ product.id }}">Добавить в корзину</button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
+
+    <script>
+        $(document).ready(function() {
+            $('.add-to-cart-btn').click(function() {
+                const productId = $(this).data('product-id'); // Получаем ID продукта
+                const url = `/add_to_cart/${productId}/`; // Формируем URL с ID продукта
+
+                $.ajax({
+                    type: 'POST',
+                    url: url,
+                    data: {
+                        'csrfmiddlewaretoken': '{{ csrf_token }}'
+                    },
+                    success: function(response) {
+                        // Увеличиваем количество товаров в корзине
+                        let cartCount = parseInt($('#cart-count').text()) + 1;
+                        $('#cart-count').text(cartCount);
+                        
+                        // Запускаем анимацию
+                        $('#cart-info').addClass('animated');
+                        setTimeout(function() {
+                            $('#cart-info').removeClass('animated');
+                        }, 1000);
+                    },
+                    error: function(response) {
+                        console.error('Ошибка:', response); // Логируем ошибку для отладки
+                        alert('Ошибка при добавлении товара в корзину. Попробуйте еще раз.');
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 </html>
+
+

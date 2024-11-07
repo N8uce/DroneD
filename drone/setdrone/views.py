@@ -1,10 +1,8 @@
 from django.core.checks import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Product, Cart, Order
-from .forms import OrderForm
-from django.contrib.auth import login, authenticate
-from .forms import SignUpForm, LoginForm
-from django.contrib.auth import login
+from django.contrib.auth import authenticate
+from .forms import LoginForm
 from .forms import SignUpForm
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
@@ -20,42 +18,52 @@ def shop(request):
         products = Product.objects.all()  # Если категория не выбрана, выводим все товары
     return render(request, 'shop.html', {'products': products})
 
+
+from django.http import JsonResponse
+
+
 def add_to_cart(request, product_id):
     product = get_object_or_404(Product, id=product_id)  # Получаем продукт или 404
     if product.stock <= 0:  # Проверяем, есть ли товар в наличии
         messages.warning(request, "Этот продукт недоступен.")
         return redirect('cart_detail')  # Возвращаем пользователя на страницу корзины
-    if request.user.is_authenticated:
-        # Добавление в корзину для авторизованного пользователя
-        cart_item, created = Cart.objects.get_or_create(user=request.user, product=product)
-        if not created:
-            cart_item.quantity += 1
-            cart_item.save()
-    else:
-        # Добавление в корзину для неавторизованного пользователя (сессия)
-        cart = request.session.get('cart', {})
-        if str(product_id) in cart:
-            cart[str(product_id)] += 1  # Увеличиваем количество
+    if request.method == 'POST':
+        if request.user.is_authenticated:
+            # Добавление в корзину для авторизованного пользователя
+            cart_item, created = Cart.objects.get_or_create(user=request.user, product=product)
+            if not created:
+                cart_item.quantity += 1
+                cart_item.save()
         else:
-            cart[str(product_id)] = 1  # Добавляем новый товар
-        request.session['cart'] = cart  # Сохраняем корзину в сессию
+            # Добавление в корзину для неавторизованного пользователя (сессия)
+            cart = request.session.get('cart', {})
+            if str(product_id) in cart:
+                cart[str(product_id)] += 1  # Увеличиваем количество
+            else:
+                cart[str(product_id)] = 1  # Добавляем новый товар
+            request.session['cart'] = cart  # Сохраняем корзину в сессию
+
+        # Если это обычный POST запрос, перенаправляем обратно на страницу продукта
+        return redirect('product_detail', product_id=product.id)
+
     return redirect('cart_detail')
 
 def cart_detail(request):
     cart_items = []
-    total_price = 0  # Инициализация общей стоимости
+    total_price = 0  # Initialize total price
     if request.user.is_authenticated:
         cart_items = Cart.objects.filter(user=request.user)
         for item in cart_items:
-            total_price += item.product.price * item.quantity  # Считаем общую стоимость
+            total_price += item.product.price * item.quantity  # Calculate total price
     else:
-        # Для незарегистрированных пользователей получаем данные из сессии
         cart = request.session.get('cart', {})
         for product_id, quantity in cart.items():
             product = get_object_or_404(Product, id=product_id)
             cart_items.append({'product': product, 'quantity': quantity})
-            total_price += product.price * quantity  # Считаем общую стоимость
+            total_price += product.price * quantity  # Calculate total price
+
     return render(request, 'cart_detail.html', {'cart_items': cart_items, 'total_price': total_price})
+
 
 def remove_from_cart_session(request, product_id):
     cart = request.session.get('cart', {})
@@ -73,25 +81,105 @@ def product_detail(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     return render(request, 'product_detail.html', {'product': product})
 
+
+
+from django.contrib.auth.decorators import login_required
+import stripe
+from django.conf import settings
+
+stripe.api_key = settings.STRIPE_SECRET_KEY
+
 @login_required
 def order_from_cart(request):
     if request.user.is_authenticated:
         cart_items = Cart.objects.filter(user=request.user)
+        total_price = sum(item.product.price * item.quantity for item in cart_items)
+
         if request.method == 'POST':
-            address = request.POST.get('address')  # Получаем адрес из POST данных
-            if address:  # Проверка на наличие адреса в данных
-                for item in cart_items:
-                    Order.objects.create(
-                        user=request.user,
-                        product=item.product,
-                        quantity=item.quantity,
-                        address=address
+            address = request.POST.get('address')
+            token = request.POST.get('stripeToken')  # Ensure this line uses .get()
+
+            if address and token:
+                try:
+                    charge = stripe.Charge.create(
+                        amount=int(total_price * 100),  # Amount in cents
+                        currency='usd',
+                        description='Order charge',
+                        source=token,
                     )
-                cart_items.delete()  # Очистка корзины после оформления заказа
-                return redirect('order_confirmation')
+
+                    for item in cart_items:
+                        Order.objects.create(
+                            user=request.user,
+                            product=item.product,
+                            quantity=item.quantity,
+                            address=address
+                        )
+                    cart_items.delete()  # Clear cart after order
+                    messages.success(request, 'Thank you for your purchase!')
+                    return redirect('order_confirmation')
+                except stripe.error.StripeError as e:
+                    messages.error(request, f'There was an error with your payment: {e}')
             else:
-                messages.error(request, "Адрес не был предоставлен.")
+                messages.error(request, "Address or payment information was not provided.")
+
     return render(request, 'order_from_cart.html', {'cart_items': cart_items})
+@login_required
+def order_from_cart(request):
+    if request.user.is_authenticated:
+        cart_items = Cart.objects.filter(user=request.user)
+        total_price = sum(item.product.price * item.quantity for item in cart_items)
+
+        if request.method == 'POST':
+            city = request.POST.get('city')
+            street = request.POST.get('street')
+            house = request.POST.get('house')
+            token = request.POST.get('stripeToken')
+
+            if city and street and house and token:
+                try:
+                    charge = stripe.Charge.create(
+                        amount=int(total_price * 100),  # Amount in cents
+                        currency='usd',
+                        description='Order charge',
+                        source=token,
+                    )
+
+                    for item in cart_items:
+                        Order.objects.create(
+                            user=request.user,
+                            product=item.product,
+                            quantity=item.quantity,
+                            city=city,
+                            street=street,
+                            house=house,
+                            status="Processing"
+                        )
+                    cart_items.delete()  # Clear cart after order
+                    messages.success(request, 'Спасибо за ваш заказ!')
+                    return redirect('order_confirmation')  # Redirect to order confirmation
+
+                except stripe.error.StripeError as e:
+                    messages.error(request, f'Ошибка при обработке платежа: {e}')
+            else:
+                messages.error(request, "Адрес или платежные данные не указаны.")
+
+    return render(request, 'order_from_cart.html', {'cart_items': cart_items, 'total_price': total_price})
+
+
+
+def order_confirmation(request):
+    latest_order = Order.objects.filter(user=request.user).last()
+    return render(request, 'order_confirmation.html', {'order': latest_order})
+
+import stripe
+from django.conf import settings
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from .models import Cart, Order
+
+
 
 def order_confirmation(request):
     latest_order = Order.objects.filter(user=request.user).last()

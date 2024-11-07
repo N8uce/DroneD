@@ -3,13 +3,19 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
 
+from django import forms
+from .models import Order
+
 class OrderForm(forms.ModelForm):
     class Meta:
         model = Order
-        fields = ['quantity', 'address']
+        fields = ['quantity', 'city', 'street', 'house']
         widgets = {
-            'address': forms.TextInput(attrs={'id': 'autocomplete', 'placeholder': 'Введите адрес...'}),
+            'city': forms.TextInput(attrs={'placeholder': 'Введите город...'}),
+            'street': forms.TextInput(attrs={'placeholder': 'Введите улицу...'}),
+            'house': forms.TextInput(attrs={'placeholder': 'Введите дом...'}),
         }
+
 
 
 class SignUpForm(UserCreationForm):
