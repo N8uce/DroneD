@@ -34,17 +34,60 @@
     </script>
 </head>
 <body>
-    <a href="{% url 'shop' %}">Вернуться в магазин</a>
-    <h1>{{ product.name }}</h1>
-    <p>{{ product.description }}</p>
-    <p>Цена: {{ product.price }} ₽</p>
+<header>
+            <div class="logo">
+				<a href="{% url 'index' %}">
+					<img src="{% static "img/logo.png" %}" alt="logo">
+					<h1>DroneD</h1>
+				</a>
+            </div>
+			<div class="authorization">
+               <div class="sl">
+
+                    <a href="{% url 'cart_detail' %}">
+				    <img class="cart" src="{% static "img/cart.svg" %}" alt="Cart Icon"></a>
+                    <span id="cart-count">0</span>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'profile' %}">Личный кабинет</a>
+                    <a href="{% url 'logout' %}">Выйти</a>
+                {% else %}
+					<a href="{% url 'login' %}">Войти</a>
+					<a href="{% url 'signup' %}">Регистрация</a>
+                    {% endif %}
+				</div>
+            {% block content %}{% endblock %}
+		   </div>
+    </header>
+<div class = "back-to-shop"><h1><a href="{% url 'shop' %}">В магазин</a></h1></div>
+<div class = "product-description">
+
     {% if product.image %}
         <img src="{{ product.image.url }}" alt="{{ product.name }}">
     {% endif %}
-    <form action="{% url 'add_to_cart' product.id %}" method="post">
-        {% csrf_token %}
-        <button type="submit" id="add-to-cart-button">Добавить в корзину</button>
-    </form>
+    <div class = "product-info">
+        <h1>{{ product.name }}</h1>
+    <p>{{ product.description }}</p>
+        <p>Цена: {{ product.price }} ₽</p>
+        <form action="{% url 'add_to_cart' product.id %}" method="post">
+            {% csrf_token %}
+            <button type="submit" class="add-to-cart-btn">Добавить в корзину</button>
+        </form>
+    </div>
+</div>
+<footer>
+	<div class="logo">
+		<img src="{% static "img/logo.png" %}" alt="logo">
+		<h1>DroneD</h1>
+    </div>
+	<div id="social_media">
+		 <a href="https://www.instagram.com/yourusername" target="_blank">
+		 <img class="icon" src="{% static "img/IN.svg" %}" alt="Instagram Icon"></a>
+		 <a href="https://www.facebook.com/yourusername" target="_blank">
+		 <img class="icon" src="{% static "img/FB.svg" %}" alt="Facebook Icon"></a>
+		 <a href="https://www.twitter.com/yourusername" target="_blank">
+		 <img class="icon" src="{% static "img/Twitter.svg" %}" alt="Twitter Icon"></a>
+	 </div>
+</footer>
 </body>
 </html>
 

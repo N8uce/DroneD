@@ -7,17 +7,6 @@
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- Подключение jQuery -->
     <style>
-        #cart-info {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            padding: 10px;
-            background: #28a745;
-            color: white;
-            border-radius: 5px;
-            transition: transform 0.3s ease;
-        }
-
         .animated {
             transform: scale(1.1); /* Увеличиваем элемент */
             transition: transform 0.5s ease; /* Плавный переход */
@@ -25,13 +14,35 @@
     </style>
 </head>
 <body>
-    <div class="topshop">
-        <a href="{% url 'index' %}" class="index">Вернуться в главное</a>
-        <div id="cart-info">
-            <span>В корзине: <span id="cart-count">0</span> товара(ов)</span>
-        </div>
-        <a href="{% url 'cart_detail' %}" class="cartshop">Смотреть корзину</a> <!-- Измененное название -->
-    </div>
+<header>
+            <div class="logo">
+				<a href="{% url 'index' %}">
+					<img src="../static/img/logo.png" alt="logo">
+					<h1>DroneD</h1>
+				</a>
+            </div>
+
+
+			<div class="authorization">
+
+                <div class="sl">
+
+                    <a href="{% url 'cart_detail' %}">
+				    <img class="cart" src="../static/img/cart.svg" alt="Cart Icon"></a>
+                    <span id="cart-count">0</span>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'profile' %}">Личный кабинет</a>
+                    <a href="{% url 'logout' %}">Выйти</a>
+                {% else %}
+					<a href="{% url 'login' %}">Войти</a>
+					<a href="{% url 'signup' %}">Регистрация</a>
+                    {% endif %}
+				</div>
+
+			   {% block content %}{% endblock %}
+		   </div>
+    </header>
+
     <div class="main">
         <div class="shop-container">
             <div class="category-sidebar">
@@ -44,18 +55,19 @@
             </div>
 
             <div class="product-list">
-                <h1>Наши Продукты</h1>
                 <div class="pr">
                     {% for product in products %}
                     <div class="product-item">
                         {% if product.image %}
-                            <img src="{{ product.image.url }}" alt="{{ product.name }}" class="primg">
+                        <a href="{% url 'product_detail' product.id %}"><img src="{{ product.image.url }}" alt="{{ product.name }}" class="primg"></a>
                         {% endif %}
-                        <h2><a href="{% url 'product_detail' product.id %}">{{ product.name }}</a></h2>
-                        <p>{{ product.description }}</p>
-                        <p>Цена: {{ product.price }} ₽</p>
-                        <p>Тип: {{ product.get_product_type_display }}</p>
-                        <button class="add-to-cart-btn" data-product-id="{{ product.id }}">Добавить в корзину</button>
+                        <div class="product-info">
+                            <h2><a href="{% url 'product_detail' product.id %}">{{ product.name }}</a></h2>
+                            <p>{{ product.description }}</p>
+                            <p>Цена: {{ product.price }} ₽</p>
+                            <p>Тип: {{ product.get_product_type_display }}</p>
+                            <button class="add-to-cart-btn" data-product-id="{{ product.id }}">Добавить в корзину</button>
+                        </div>
                     </div>
                     {% endfor %}
                 </div>
@@ -94,6 +106,20 @@
             });
         });
     </script>
+<footer>
+	<div class="logo">
+		<img src="../static/img/logo.png" alt="logo">
+		<h1>DroneD</h1>
+    </div>
+	<div id="social_media">
+		 <a href="https://www.instagram.com/yourusername" target="_blank">
+		 <img class="icon" src="../static/img/IN.svg" alt="Instagram Icon"></a>
+		 <a href="https://www.facebook.com/yourusername" target="_blank">
+		 <img class="icon" src="../static/img/FB.svg" alt="Facebook Icon"></a>
+		 <a href="https://www.twitter.com/yourusername" target="_blank">
+		 <img class="icon" src="../static/img/Twitter.svg" alt="Twitter Icon"></a>
+	 </div>
+</footer>
 </body>
 </html>
 

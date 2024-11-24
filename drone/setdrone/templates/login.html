@@ -7,13 +7,45 @@
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
-<a href="{% url 'index' %}">Вернуться в главное</a>
+<header>
+            <div class="logo">
+				<a href="{% url 'index' %}">
+					<img src="{% static "img/logo.png" %}" alt="logo">
+					<h1>DroneD</h1>
+				</a>
+            </div>
+			<div class="authorization">
+               <div class="sl">
+                    <a href="{% url 'cart_detail' %}">
+				    <img class="cart" src="{% static "img/cart.svg" %}" alt="Cart Icon"></a>
+                    <span id="cart-count">0</span>
+				</div>
+            {% block content %}{% endblock %}
+		   </div>
+    </header>
+<div class = "back-to-shop"><h1><a href="/shop">В магазин</a></h1></div>
+<div class="signin-form">
     <h1>Вход</h1>
     <form method="post">
         {% csrf_token %}
         {{ form.as_p }}
-        <button type="submit">Войти</button>
+        <button type="submit">ВОЙТИ</button>
     </form>
     <a href="{% url 'signup' %}">Нет аккаунта? Зарегистрироваться</a>
+</div>
+<footer>
+	<div class="logo">
+		<img src="../static/img/logo.png" alt="logo">
+		<h1>DroneD</h1>
+    </div>
+	<div id="social_media">
+		 <a href="https://www.instagram.com/yourusername" target="_blank">
+		 <img class="icon" src="../static/img/IN.svg" alt="Instagram Icon"></a>
+		 <a href="https://www.facebook.com/yourusername" target="_blank">
+		 <img class="icon" src="../static/img/FB.svg" alt="Facebook Icon"></a>
+		 <a href="https://www.twitter.com/yourusername" target="_blank">
+		 <img class="icon" src="../static/img/Twitter.svg" alt="Twitter Icon"></a>
+	 </div>
+</footer>
 </body>
 </html>

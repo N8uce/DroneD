@@ -73,43 +73,78 @@
     </script>
 </head>
 <body>
-    <h1>Оформление заказа</h1>
+<header>
+            <div class="logo">
+				<a href="{% url 'index' %}">
+					<img src="../static/img/logo.png" alt="logo">
+					<h1>DroneD</h1>
+				</a>
+            </div>
+
+			<div class="authorization">
+
+                <div class="sl">
+
+
+                {% if user.is_authenticated %}
+                    <a href="{% url 'profile' %}">Личный кабинет</a>
+                    <a href="{% url 'logout' %}">Выйти</a>
+                {% else %}
+					<a href="{% url 'login' %}">Войти</a>
+					<a href="{% url 'signup' %}">Регистрация</a>
+                    {% endif %}
+				</div>
+
+			   {% block content %}{% endblock %}
+		   </div>
+    </header>
+
+<div class = "back-to-shop"><h1><a href="{% url 'shop' %}">В магазин</a></h1></div>
+<div class = "order">
+    <div class = "order-info">
+    <h1>Информация о заказе</h1>
     {% if error %}
         <div class="error">{{ error }}</div>
     {% endif %}
-    <div class="cart">
         {% for item in cart_items %}
-            <div class="cart-item">
+         <div class="cart-item">
+
+            <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="primg">
+            <div class="cart-item-info">
                 <h2>{{ item.product.name }}</h2>
                 <p>{{ item.product.description }}</p>
                 <p>Количество: {{ item.quantity }}</p>
                 <p>Цена: {{ item.product.price }} ₽</p>
             </div>
-        {% endfor %}
+
+         </div>
+         {% endfor %}
     </div>
-    <div class="total-price">
-        <h3>Общая сумма: {{ total_price }} ₽</h3>
+    <div class="location-info">
+        <h1>Информация о пункте доставки</h1>
+        <form action="{% url 'order_from_cart' %}" method="post" id="payment-form">
+            {% csrf_token %}
+
+            <input list="city-suggestions" id="city" name="city" placeholder="Город" required>
+            <datalist id="city-suggestions"></datalist>
+
+            <input list="street-suggestions" id="street" name="street" placeholder="Улица" required>
+            <datalist id="street-suggestions"></datalist>
+
+            <input list="house-suggestions" id="house" name="house" placeholder="Дом" required>
+            <datalist id="house-suggestions"></datalist>
+
+            <div class="form-row">
+                <label for="card-element">Кредитная или дебетовая карта</label>
+                <div id="card-element"></div>
+                <div id="card-errors" role="alert"></div>
+            </div>
+
+            <h3>Сумма заказа: {{ total_price }} ₽</h3>
+            <button class = "make-order-btn" type="submit">Оформить заказ</button>
+        </form>
     </div>
-    <form action="{% url 'order_from_cart' %}" method="post" id="payment-form">
-        {% csrf_token %}
-        
-        <input list="city-suggestions" id="city" name="city" placeholder="Город" required>
-        <datalist id="city-suggestions"></datalist>
-
-        <input list="street-suggestions" id="street" name="street" placeholder="Улица" required>
-        <datalist id="street-suggestions"></datalist>
-
-        <input list="house-suggestions" id="house" name="house" placeholder="Дом" required>
-        <datalist id="house-suggestions"></datalist>
-
-        <div class="form-row">
-            <label for="card-element">Кредитная или дебетовая карта</label>
-            <div id="card-element"></div>
-            <div id="card-errors" role="alert"></div>
-        </div>
-        <button type="submit">Оформить заказ</button>
-    </form>
-    
+    </div>
     <script>
         var stripe = Stripe('pk_test_51QE73wJ53brjUdQgbKYUWNB04DGiDVaeFevWLAJip87Y9tMJ7Of9rGb0FZokSeaEGGscK3hAHmb7fQFDNY1GgTfC00gLo2tPnK');
         var elements = stripe.elements();
@@ -143,5 +178,19 @@
             });
         });
     </script>
+<footer>
+	<div class="logo">
+		<img src="../static/img/logo.png" alt="logo">
+		<h1>DroneD</h1>
+    </div>
+	<div id="social_media">
+		 <a href="https://www.instagram.com/yourusername" target="_blank">
+		 <img class="icon" src="../static/img/IN.svg" alt="Instagram Icon"></a>
+		 <a href="https://www.facebook.com/yourusername" target="_blank">
+		 <img class="icon" src="../static/img/FB.svg" alt="Facebook Icon"></a>
+		 <a href="https://www.twitter.com/yourusername" target="_blank">
+		 <img class="icon" src="../static/img/Twitter.svg" alt="Twitter Icon"></a>
+	 </div>
+</footer>
 </body>
 </html>

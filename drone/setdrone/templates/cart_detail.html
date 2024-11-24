@@ -5,42 +5,213 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <title>Корзина</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script> <!-- Подключаем jQuery -->
 </head>
+
 <body>
-    <h1>Ваша корзина</h1>
-    {% if cart_items %}
-        <div class="cart-list">
-            {% for item in cart_items %}
-                <div class="cart-item">
-                    <p>{{ item.product.name }} - {{ item.quantity }} шт.</p>
-                    <p>Цена: {{ item.product.price }} ₽ за шт.</p>
-                    <p>Итоговая цена: {{ item.product.price|multiply:item.quantity }} ₽</p>
-                    {% if user.is_authenticated %}
-                        <form action="{% url 'remove_from_cart' item.product.id %}" method="post">
-                            {% csrf_token %}
-                            <button type="submit">Удалить</button>
-                        </form>
-                    {% else %}
-                        <form action="{% url 'remove_from_cart_session' item.product.id %}" method="post">
-                            {% csrf_token %}
-                            <button type="submit">Удалить</button>
-                        </form>
-                    {% endif %}
-                </div>
-            {% endfor %}
+<header>
+    <div class="logo">
+        <a href="{% url 'index' %}">
+            <img src="{% static 'img/logo.png' %}" alt="logo">
+            <h1>DroneD</h1>
+        </a>
+    </div>
+
+    <div class="authorization">
+        <div class="sl">
+            {% if user.is_authenticated %}
+                <a href="{% url 'profile' %}">Личный кабинет</a>
+                <a href="{% url 'logout' %}">Выйти</a>
+            {% else %}
+                <a href="{% url 'login' %}">Войти</a>
+                <a href="{% url 'signup' %}">Регистрация</a>
+            {% endif %}
         </div>
-        <p>Общая сумма: {{ total_price }} ₽</p> <!-- Add this line to display the total price -->
-        <form action="{% url 'order_from_cart' %}" method="post">
-            {% csrf_token %}
-            <button type="submit">Оформить заказ</button>
-        </form>
+    </div>
+</header>
+
+<div class="back-to-shop"><h1><a href="{% url 'shop' %}">В магазин</a></h1></div>
+
+<div class="cart-details">
+    {% if cart_items %}
+    <h1>Ваша корзина</h1>
+
+    <div class="cart-list">
+        {% for item in cart_items %}
+        <div class="cart-item" data-product-id="{{ item.product.id }}" data-stock="{{ item.product.stock }}">
+            <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="primg">
+            <div class="cart-item-info">
+                <p>{{ item.product.name }}</p>
+                <p>Цена: {{ item.product.price }} ₽ за шт.</p>
+                <p>Итоговая цена: <span class="item-total">{{ item.product.price|multiply:item.quantity }}</span> ₽</p>
+                <p>На складе: 
+                    {% if item.stock > 0 %}
+                        {{ item.stock }} шт.
+                    {% else %}
+                        <span class="error">Нет в наличии</span>
+                    {% endif %}
+                </p>
+        
+                <div class="quantity-buttons">
+                    <!-- Кнопка уменьшения -->
+                    <button class="btn-minus" {% if item.quantity <= 1 %} disabled {% endif %}>-</button>
+                    <!-- Отображение текущего количества товара -->
+                    <span class="quantity">{{ item.quantity }}</span>
+                    <!-- Кнопка увеличения -->
+                    <button class="btn-plus" {% if item.quantity >= item.stock %} disabled {% endif %}>+</button>
+                </div>
+        
+                <form action="{% url 'remove_from_cart' item.product.id %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit">Удалить</button>
+                </form>
+            </div>
+        </div>
+        
+        
+        {% endfor %}
+    </div>
+
+    <p>Общая сумма: <span id="total-price">{{ total_price }}</span> ₽</p>
+
+    {% if not insufficient_stock and not out_of_stock_items %}
+    <form action="{% url 'order_from_cart' %}" method="post">
+        {% csrf_token %}
+        <button class="make-order-btn" type="submit">Оформить заказ</button>
+    </form>
     {% else %}
-        <p>Ваша корзина пуста.</p>
+    <p class="error">
+        {% if out_of_stock_items %}
+            В корзине есть товары, которые отсутствуют на складе. Пожалуйста, удалите их перед заказом.
+        {% elif insufficient_stock %}
+            В корзине есть товары, которых недостаточно на складе. Пожалуйста, измените их количество перед заказом.
+        {% endif %}
+    </p>
     {% endif %}
-    <a href="{% url 'shop' %}">Вернуться в магазин</a>
+
+    {% else %}
+    <h1>Ваша корзина пуста</h1>
+    <a href="{% url 'shop' %}"><img class="sad-cart" src="{% static 'img/empty-cart.jpg' %}" alt="Empty cart"></a>
+    {% endif %}
+</div>
+
+<footer>
+    <div class="logo">
+        <img src="{% static 'img/logo.png' %}" alt="logo">
+        <h1>DroneD</h1>
+    </div>
+    <div id="social_media">
+        <a href="https://www.instagram.com/yourusername" target="_blank">
+            <img class="icon" src="{% static 'img/IN.svg' %}" alt="Instagram Icon"></a>
+        <a href="https://www.facebook.com/yourusername" target="_blank">
+            <img class="icon" src="{% static 'img/FB.svg' %}" alt="Facebook Icon"></a>
+        <a href="https://www.twitter.com/yourusername" target="_blank">
+            <img class="icon" src="{% static 'img/Twitter.svg' %}" alt="Twitter Icon"></a>
+    </div>
+</footer>
+
+<script>
+$(document).ready(function () {
+    console.log('Cart script loaded');
+    
+    function updateTotalPrice() {
+        let total = 0;
+        $('.cart-item').each(function () {
+            let itemTotal = parseFloat($(this).find('.item-total').text());
+            total += itemTotal;
+        });
+        $('#total-price').text(total.toFixed(2));
+    }
+
+    function updateButtonState($cartItem) {
+        let quantity = parseInt($cartItem.find('.quantity').text());
+        let stock = parseInt($cartItem.data('stock'));
+
+        if (quantity <= 1) {
+            $cartItem.find('.btn-minus').attr('disabled', 'disabled');
+        } else {
+            $cartItem.find('.btn-minus').removeAttr('disabled');
+        }
+
+        if (quantity >= stock) {
+            $cartItem.find('.btn-plus').attr('disabled', 'disabled');
+        } else {
+            $cartItem.find('.btn-plus').removeAttr('disabled');
+        }
+    }
+
+    function bindButtonEvents() {
+        console.log('Binding button events');
+        
+        $('.btn-plus').off('click').on('click', function () {
+            console.log('Plus button clicked');
+            let $cartItem = $(this).closest('.cart-item');
+            let productId = $cartItem.data('product-id');
+            let quantity = parseInt($cartItem.find('.quantity').text());
+
+            console.log('Current quantity before plus:', quantity);
+
+            $.ajax({
+                type: 'POST',
+                url: `/cart/update/${productId}/plus/`,
+                data: {
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function (response) {
+                    console.log('Response from server (plus):', response);
+                    if (response.success) {
+                        $cartItem.find('.quantity').text(response.new_quantity);
+                        $cartItem.find('.item-total').text(response.new_item_total.toFixed(2));
+                        updateTotalPrice();
+                        updateButtonState($cartItem); // Обновляем состояние кнопок
+                    }
+                },
+                error: function (xhr) {
+                    alert(xhr.responseJSON.error || 'Произошла ошибка.');
+                }
+            });
+        });
+
+        $('.btn-minus').off('click').on('click', function () {
+            console.log('Minus button clicked');
+            let $cartItem = $(this).closest('.cart-item');
+            let productId = $cartItem.data('product-id');
+            let quantity = parseInt($cartItem.find('.quantity').text());
+
+            console.log('Current quantity before minus:', quantity);
+
+            $.ajax({
+                type: 'POST',
+                url: `/cart/update/${productId}/minus/`,
+                data: {
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function (response) {
+                    console.log('Response from server (minus):', response);
+                    if (response.success) {
+                        $cartItem.find('.quantity').text(response.new_quantity);
+                        $cartItem.find('.item-total').text(response.new_item_total.toFixed(2));
+                        updateTotalPrice();
+                        updateButtonState($cartItem); // Обновляем состояние кнопок
+                    }
+                },
+                error: function (xhr) {
+                    alert(xhr.responseJSON.error || 'Произошла ошибка.');
+                }
+            });
+        });
+    }
+
+    // Привязываем события при загрузке страницы
+    bindButtonEvents();
+    updateTotalPrice();
+});
+
+
+
+</script>
+
 </body>
 </html>
-
-
-

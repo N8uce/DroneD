@@ -30,13 +30,13 @@ urlpatterns = [
     path('remove-from-cart/<int:product_id>/', views.remove_from_cart, name='remove_from_cart'),
     path('order-from-cart/', views.order_from_cart, name='order_from_cart'),
     path('remove-from-cart-session/<int:product_id>/', views.remove_from_cart_session, name='remove_from_cart_session'),
-    path('order-confirmation/', views.order_confirmation, name='order_confirmation'),
+    path('order-confirmation/<int:order_id>/', views.order_confirmation, name='order_confirmation'),
     path('signup/', views.signup, name='signup'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('profile/', views.profile, name='profile'),
+    path('cart/update/<int:product_id>/<str:action>/', views.update_cart_item, name='update_cart_item'),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
 
 
 

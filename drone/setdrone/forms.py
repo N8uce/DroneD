@@ -1,21 +1,24 @@
-from .models import Order
-from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
-
 from django import forms
-from .models import Order
+from .models import Order, OrderItem, Product
 
 class OrderForm(forms.ModelForm):
     class Meta:
         model = Order
-        fields = ['quantity', 'city', 'street', 'house']
+        fields = ['city', 'street', 'house']
         widgets = {
             'city': forms.TextInput(attrs={'placeholder': 'Введите город...'}),
             'street': forms.TextInput(attrs={'placeholder': 'Введите улицу...'}),
             'house': forms.TextInput(attrs={'placeholder': 'Введите дом...'}),
         }
 
+class OrderItemForm(forms.ModelForm):
+    class Meta:
+        model = OrderItem
+        fields = ['product', 'quantity']
+
+from .models import Profile  # Import your Profile model
 
 
 class SignUpForm(UserCreationForm):
@@ -24,7 +27,20 @@ class SignUpForm(UserCreationForm):
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'phone_number', 'password1', 'password2')
+        fields = ('username', 'email', 'password1', 'password2')
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.email = self.cleaned_data['email']
+
+        if commit:
+            user.save()
+            # Use get_or_create to avoid duplicate profile creation
+            profile, created = Profile.objects.get_or_create(user=user)
+            profile.phone_number = self.cleaned_data['phone_number']
+            profile.save()
+
+        return user
 
 class LoginForm(AuthenticationForm):
     pass
