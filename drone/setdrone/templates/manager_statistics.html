@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+{% load static %}
+{% load custom_filters %}
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<header>
+    <div class="logo">
+        <a href="{% url 'index' %}">
+            <img src="{% static 'img/logo.png' %}" alt="logo">
+            <h1>DroneD</h1>
+        </a>
+    </div>
+    <div class="authorization">
+    {% block content %}{% endblock %}
+    </div>
+</header>
+<div class="back-to-shop"><h1><a href="{% url 'profile' %}">В личный кабинет</a></h1></div>
+<body>
+<table>
+    <tr>
+        <th>Название продукта</th>
+        <th>На складе</th>
+        <th>Продано</th>
+    </tr>
+    {% for product in products %}
+    <tr>
+        <td>{{ product.name }}</td>
+        <td>{{ product.stock }}</td>
+        <td>{{ total_sold|get_item:product.id }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<footer>
+    <div class="logo">
+        <img src="{% static 'img/logo.png' %}" alt="logo">
+        <h1>DroneD</h1>
+    </div>
+    <div id="social_media">
+        <a href="https://www.instagram.com/yourusername" target="_blank">
+            <img class="icon" src="{% static 'img/IN.svg' %}" alt="Instagram Icon">
+        </a>
+        <a href="https://www.facebook.com/yourusername" target="_blank">
+            <img class="icon" src="{% static 'img/FB.svg' %}" alt="Facebook Icon">
+        </a>
+        <a href="https://www.twitter.com/yourusername" target="_blank">
+            <img class="icon" src="{% static 'img/Twitter.svg' %}" alt="Twitter Icon">
+        </a>
+    </div>
+</footer>
+</body>
+</html>

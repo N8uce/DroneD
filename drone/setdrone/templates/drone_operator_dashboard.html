@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Панель оператора дронов</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<header>
+    <div class="logo">
+        <a href="{% url 'index' %}">
+            <img src="{% static 'img/logo.png' %}" alt="logo">
+            <h1>DroneD</h1>
+        </a>
+    </div>
+    <div class="authorization">
+        {% block content %}{% endblock %}
+    </div>
+</header>
+<div class="back-to-shop"><h1><a href="{% url 'profile' %}">В личный кабинет</a></h1></div>
+<body>
+    <h1>Панель оператора дронов</h1>
+
+    <h2>Текущие заказы (Pending)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID заказа</th>
+                <th>Продукты</th>
+                <th>Адрес</th>
+                <th>Статус</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in current_orders %}
+            {% if order.status == 'Pending' %}
+            <tr>
+                <td>{{ order.id }}</td>
+                <td>
+                    <ul>
+                        {% for item in order.orderitem_set.all %}
+                        <li>{{ item.product.name }} ({{ item.quantity }})</li>
+                        {% endfor %}
+                    </ul>
+                </td>
+                <td>{{ order.city }}, {{ order.street }} {{ order.house }}</td>
+                <td>{{ order.status }}</td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Завершенные заказы (Completed)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID заказа</th>
+                <th>Продукты</th>
+                <th>Адрес</th>
+                <th>Статус</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in current_orders %}
+            {% if order.status == 'Completed' %}
+            <tr>
+                <td>{{ order.id }}</td>
+                <td>
+                    <ul>
+                        {% for item in order.orderitem_set.all %}
+                        <li>{{ item.product.name }} ({{ item.quantity }})</li>
+                        {% endfor %}
+                    </ul>
+                </td>
+                <td>{{ order.city }}, {{ order.street }} {{ order.house }}</td>
+                <td>{{ order.status }}</td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+
+<footer>
+    <div class="logo">
+        <img src="{% static 'img/logo.png' %}" alt="logo">
+        <h1>DroneD</h1>
+    </div>
+    <div id="social_media">
+        <a href="https://www.instagram.com/yourusername" target="_blank">
+            <img class="icon" src="{% static 'img/IN.svg' %}" alt="Instagram Icon">
+        </a>
+        <a href="https://www.facebook.com/yourusername" target="_blank">
+            <img class="icon" src="{% static 'img/FB.svg' %}" alt="Facebook Icon">
+        </a>
+        <a href="https://www.twitter.com/yourusername" target="_blank">
+            <img class="icon" src="{% static 'img/Twitter.svg' %}" alt="Twitter Icon">
+        </a>
+    </div>
+</footer>
+</body>
+</html>
