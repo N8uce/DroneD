@@ -274,18 +274,25 @@ footer{
     color: white;
     border: none;
     border-radius:15px;
-    padding: 10px 15px;
+    padding: 8px 10px;
     text-align: center;
     display: inline-block; /* Отображение как строчный блок */
     margin-top: 10px; /* Отступ сверху */
     cursor: pointer; /* Курсор в виде указателя */
     transition: background-color 0.3s; /* Плавный переход цвета */
+    box-shadow: 0 5px 0 #0fa801;
 }
 
 .add-to-cart-btn:hover {
     background-color: #45a049;
+    box-shadow: none;
+    position: relative;
+    top: 2px;
 }
-
+.add-to-cart-btn:active
+{
+    transform: scale(1.05);
+}
 
  /* Информация о товаре */
 .back-to-shop{
@@ -349,10 +356,10 @@ footer{
     margin-top:-20px;
 }
 /*Содержимое корзины*/
-
 .cart-details{
     width:50%;
 }
+
 .cart-details h1,.cart-details p{
     margin-left:7%;
 }
@@ -367,6 +374,25 @@ footer{
     border:none;
     transition: background-color 0.3s;
     background-color: #4CAF50;
+}
+
+.make-order-btn:hover{
+    cursor:pointer;
+    background-color: #45a049;
+
+}
+
+.cart-details{
+    display:flex;
+    gap:40px;
+    width:80%;
+}
+
+.quantity-buttons
+{
+    display: flex;
+    gap:20px;
+    width: 25%;
 }
 .make-order-btn:hover{
     cursor:pointer;
@@ -410,7 +436,11 @@ footer{
     background-color:#a50d0d;
     transition: background-color 0.3s;
 }
+
 @media(max-width:800px){
+    .cart-details{
+          flex-direction:column;
+    }
     .cart-item{
         flex-direction:column;
 
@@ -443,4 +473,41 @@ footer{
 #card-errors
 {
     color: red;
+}
+
+
+table {
+    width: 100%; /* Таблица занимает всю ширину контейнера */
+    border-collapse: collapse; /* Убирает промежутки между границами ячеек */
+}
+
+th, td {
+    padding: 10px; /* Добавляет внутренние отступы для удобного отображения текста */
+    text-align: left; /* Выравнивание текста по левому краю */
+    word-wrap: break-word; /* Перенос длинного текста */
+    border: 1px solid #ddd; /* Границы ячеек */
+}
+
+thead th {
+    background-color: #f4f4f4; /* Фон заголовка таблицы */
+}
+
+tbody tr:nth-child(even) {
+    background-color: #f9f9f9; /* Заливка четных строк для читабельности */
+}
+
+td {
+    max-width: 200px; /* Ограничение ширины ячейки */
+    overflow: hidden;
+    text-overflow: ellipsis; /* Если текст длинный, отображается многоточие */
+}
+
+@media screen and (max-width: 768px) {
+    table, thead, tbody, th, td, tr {
+        display: block; /* Для маленьких экранов сделать таблицу блочной */
+    }
+
+    th, td {
+        width: 100%; /* Ячейки занимают всю ширину */
+    }
 }

@@ -34,8 +34,9 @@
 
 <div class="back-to-shop"><h1><a href="{% url 'shop' %}">В магазин</a></h1></div>
 
+{% if cart_items %}  
 <div class="cart-details">
-    {% if cart_items %}
+   
     <h1>Ваша корзина</h1>
 
     <div class="cart-list">
@@ -46,6 +47,7 @@
                 <p>{{ item.product.name }}</p>
                 <p>Цена: {{ item.product.price }} ₽ за шт.</p>
                 <p>Итоговая цена: <span class="item-total">{{ item.product.price|multiply:item.quantity }}</span> ₽</p>
+                {% if request.user.profile.role == 'warehouse_manager' %}
                 <p>На складе: 
                     {% if item.stock > 0 %}
                         {{ item.stock }} шт.
@@ -53,15 +55,19 @@
                         <span class="error">Нет в наличии</span>
                     {% endif %}
                 </p>
+                {% endif %}
         
                 <div class="quantity-buttons">
                     <!-- Кнопка уменьшения -->
                     <button class="btn-minus" {% if item.quantity <= 1 %} disabled {% endif %}>-</button>
-                    <!-- Отображение текущего количества товара -->
-                    <span class="quantity">{{ item.quantity }}</span>
+                    
                     <!-- Кнопка увеличения -->
                     <button class="btn-plus" {% if item.quantity >= item.stock %} disabled {% endif %}>+</button>
+
                 </div>
+
+                 <!-- Отображение текущего количества товара -->
+                    <span class="quantity">{{item.quantity }}</span>
         
                 <form action="{% url 'remove_from_cart' item.product.id %}" method="post">
                     {% csrf_token %}
@@ -73,29 +79,35 @@
         
         {% endfor %}
     </div>
-
-    <p>Общая сумма: <span id="total-price">{{ total_price }}</span> ₽</p>
-
-    {% if not insufficient_stock and not out_of_stock_items %}
-    <form action="{% url 'order_from_cart' %}" method="post">
-        {% csrf_token %}
-        <button class="make-order-btn" type="submit">Оформить заказ</button>
-    </form>
-    {% else %}
-    <p class="error">
-        {% if out_of_stock_items %}
-            В корзине есть товары, которые отсутствуют на складе. Пожалуйста, удалите их перед заказом.
-        {% elif insufficient_stock %}
-            В корзине есть товары, которых недостаточно на складе. Пожалуйста, измените их количество перед заказом.
+    <div>
+        <p>Общая сумма: <span id="total-price">{{ total_price }}</span> ₽</p>
+    
+        {% if not insufficient_stock and not out_of_stock_items %}
+        <form action="{% url 'order_from_cart' %}" method="post">
+            {% csrf_token %}
+            <button class="make-order-btn" type="submit">Оформить заказ</button>
+        </form>
+        {% else %}
+        <p class="error">
+            {% if out_of_stock_items %}
+                В корзине есть товары, которые отсутствуют на складе. Пожалуйста, удалите их перед заказом.
+            {% elif insufficient_stock %}
+                В корзине есть товары, которых недостаточно на складе. Пожалуйста, измените их количество перед заказом.
+            {% endif %}
+        </p>
         {% endif %}
-    </p>
-    {% endif %}
+    </div>
 
-    {% else %}
-    <h1>Ваша корзина пуста</h1>
-    <a href="{% url 'shop' %}"><img class="sad-cart" src="{% static 'img/empty-cart.jpg' %}" alt="Empty cart"></a>
-    {% endif %}
+    
 </div>
+    {% else %}
+<div class="empty_cart">
+    <h1>Ваша корзина пуста</h1>
+     <a href="{% url 'shop' %}"><img class="sad-cart" src="{% static 'img/empty-cart.jpg' %}" alt="Empty cart"></a>
+  
+</div>
+
+    {% endif %}
 
 <footer>
     <div class="logo">

@@ -1,12 +1,37 @@
 from django.core.checks import messages
-from django.shortcuts import render, redirect, get_object_or_404
-from .models import Product, Cart, Order
 from django.contrib.auth import authenticate
 from .forms import LoginForm
 from .forms import SignUpForm
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
-from django.contrib import messages  # Импортируем правильный модуль для сообщений
+from django.shortcuts import redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from .models import Cart
+from django.shortcuts import render
+from .models import Order
+from django.db.models import Sum
+from django.http import JsonResponse
+from .models import Product
+import stripe
+from django.conf import settings
+from .task import send_order_arrival_notification,send_order_telegram_notification,update_order_status
+from .models import OrderItem
+from django.shortcuts import get_object_or_404
+from .models import Profile
+
+def get_cart_count(request):
+    cart_count = 0
+    if request.user.is_authenticated:
+        cart_count = Cart.objects.filter(user=request.user).aggregate(total=Sum('quantity'))['total'] or 0
+    else:
+        cart = request.session.get('cart', {})
+        cart_count = sum(cart.values())
+    return cart_count
+
+def cart_count(request):
+    cart_count = get_cart_count(request)
+    return JsonResponse({'cart_count': cart_count})
+
 def index(request):
     return render(request, "index.html")
 
@@ -17,14 +42,6 @@ def shop(request):
     else:
         products = Product.objects.all()  # Если категория не выбрана, выводим все товары
     return render(request, 'shop.html', {'products': products})
-
-
-
-
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
-from .models import Product, Cart
-
 
 def update_cart_item(request, product_id, action):
     if request.method == 'POST':
@@ -60,29 +77,31 @@ def update_cart_item(request, product_id, action):
     return JsonResponse({'success': False, 'error': 'Неверный запрос.'}, status=400)
 
 
-
 def add_to_cart(request, product_id):
-    product = get_object_or_404(Product, id=product_id)  # Получаем продукт или 404
-    if request.method == 'POST':
-        if request.user.is_authenticated:
-            # Добавление в корзину для авторизованного пользователя
-            cart_item, created = Cart.objects.get_or_create(user=request.user, product=product)
-            if not created:
-                cart_item.quantity += 1
-                cart_item.save()
+    product = get_object_or_404(Product, id=product_id)
+
+    # Логика для авторизованных пользователей
+    if request.user.is_authenticated:
+        cart_item, created = Cart.objects.get_or_create(user=request.user, product=product)
+        if not created:
+            cart_item.quantity += 1
+            cart_item.save()
+    else:
+        # Для неавторизованных пользователей
+        cart = request.session.get('cart', {})
+        if str(product_id) in cart:
+            cart[str(product_id)] += 1  # Увеличиваем количество товара
         else:
-            # Добавление в корзину для неавторизованного пользователя (сессия)
-            cart = request.session.get('cart', {})
-            if str(product_id) in cart:
-                cart[str(product_id)] += 1  # Увеличиваем количество
-            else:
-                cart[str(product_id)] = 1  # Добавляем новый товар
-            request.session['cart'] = cart  # Сохраняем корзину в сессию
+            cart[str(product_id)] = 1  # Добавляем товар
+        request.session['cart'] = cart  # Сохраняем корзину в сессии
 
-        # Если это обычный POST запрос, перенаправляем обратно на страницу продукта
-        return redirect('product_detail', product_id=product.id)
+    # Возвращаем актуальное количество товаров
+    if request.user.is_authenticated:
+        cart_count = Cart.objects.filter(user=request.user).aggregate(total=Sum('quantity'))['total'] or 0
+    else:
+        cart_count = sum(request.session.get('cart', {}).values())
 
-    return redirect('cart_detail')
+    return JsonResponse({'cart_count': cart_count})
 
 def cart_detail(request):
     cart_items = []
@@ -142,18 +161,8 @@ def product_detail(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     return render(request, 'product_detail.html', {'product': product})
 
-
-
-import stripe
-from django.conf import settings
-
+#Ключик stripe
 stripe.api_key = settings.STRIPE_SECRET_KEY
-
-
-from .task import send_order_arrival_notification
-
-
-from .models import OrderItem
 def order_from_cart(request):
     if request.user.is_authenticated:
         cart_items = Cart.objects.filter(user=request.user)
@@ -170,7 +179,7 @@ def order_from_cart(request):
                     # Платежная обработка
                     charge = stripe.Charge.create(
                         amount=int(total_price * 100),  # Amount in cents
-                        currency='usd',
+                        currency='rub',
                         description='Order charge',
                         source=token,
                     )
@@ -181,19 +190,31 @@ def order_from_cart(request):
                         city=city,
                         street=street,
                         house=house,
-                        status="Processing"
+                        status="Pending"
                     )
 
-                    # Создание товаров для заказа (OrderItem)
+                    # Создание товаров для заказа (OrderItem) и уменьшение количества на складе
                     for item in cart_items:
+                        # Проверяем доступное количество на складе
+                        if item.quantity > item.product.stock:
+                            messages.error(request, f"Недостаточно товара '{item.product.name}' на складе.")
+                            return redirect('cart_detail')
+
                         OrderItem.objects.create(
-                            order=order,  # Привязываем товар к заказу
+                            order=order,
                             product=item.product,
                             quantity=item.quantity
                         )
 
-                    # Запуск Celery задачи для отправки уведомления через 1 минуту
-                    send_order_arrival_notification.apply_async(args=[order.id], countdown=60)
+                        # Уменьшаем количество товара на складе
+                        item.product.stock -= item.quantity
+                        item.product.save()
+
+
+                    # Запуск задач (опционально)
+                    update_order_status.apply_async((order.id,), countdown=60)  # Таймер на 20 минут
+                    # send_order_arrival_notification.apply_async(args=[order.id], countdown=60)
+                    # send_order_telegram_notification.apply_async(args=[order.id], countdown=60)
 
                     cart_items.delete()  # Очистить корзину после заказа
                     messages.success(request, 'Спасибо за ваш заказ!')
@@ -201,39 +222,21 @@ def order_from_cart(request):
 
                 except stripe.error.StripeError as e:
                     messages.error(request, f'Ошибка при обработке платежа: {e}')
-                    return redirect('order_from_cart')  # Перенаправление на ту же страницу в случае ошибки
+                    return redirect('order_from_cart')
             else:
                 messages.error(request, "Адрес или платежные данные не указаны.")
-                return redirect('order_from_cart')  # Перенаправление на ту же страницу, если не указаны все данные
+                return redirect('order_from_cart')
 
-        # Если метод не POST, отображаем страницу с корзиной
         return render(request, 'order_from_cart.html', {'cart_items': cart_items, 'total_price': total_price})
 
     else:
-        # Если пользователь не аутентифицирован, перенаправляем на страницу входа
         return redirect('login')
 
-
-
-# views.py
-from django.shortcuts import get_object_or_404
 
 
 def order_confirmation(request, order_id):
     order = get_object_or_404(Order, id=order_id)
     return render(request, 'order_confirmation.html', {'order': order})
-
-
-import stripe
-from django.conf import settings
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from .models import Cart, Order
-
-from django.shortcuts import render
-from .models import Order
-
 
 def signup(request):
     if request.method == 'POST':
@@ -281,11 +284,50 @@ def logout_view(request):
     logout(request)
     return redirect('index')
 
-from django.utils.timezone import now
-from datetime import timedelta
 @login_required
 def profile(request):
-    return render(request, 'profile.html')
+    profile = Profile.objects.get(user=request.user)
+    return render(request, 'profile.html', {'profile': profile})
+
+
+from django.views.generic import TemplateView
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.db.models import Sum
+from .models import Product, OrderItem
+
+class ProductStatisticsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'manager_statistics.html'
+
+    def test_func(self):
+        return self.request.user.profile.role == 'warehouse_manager'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        products = Product.objects.all()
+        context['products'] = products
+        context['total_sold'] = {product.id: self.get_total_sold(product) for product in products}
+        return context
+
+    def get_total_sold(self, product):
+        return OrderItem.objects.filter(product=product).aggregate(total_sold=Sum('quantity'))['total_sold'] or 0
+
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from .models import Order
+
+
+from django.db.models import Q
+
+@login_required
+def drone_operator_dashboard(request):
+    current_orders = Order.objects.prefetch_related('orderitem_set__product').filter(
+        status__in=['Pending', 'Completed']
+    )
+    context = {
+        'current_orders': current_orders,
+    }
+    return render(request, 'drone_operator_dashboard.html', context)
 
 
 

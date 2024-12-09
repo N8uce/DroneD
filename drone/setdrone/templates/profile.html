@@ -14,31 +14,45 @@
         </a>
     </div>
     <div class="authorization">
-       <div class="sl">
+        <div class="sl">
             <a href="{% url 'cart_detail' %}">
-            <img class="cart" src="{% static "img/cart.svg" %}" alt="Cart Icon"></a>
+                <img class="cart" src="{% static "img/cart.svg" %}" alt="Cart Icon">
+            </a>
             <span id="cart-count">0</span>
         </div>
     {% block content %}{% endblock %}
-   </div>
+    </div>
 </header>
 <div class="back-to-shop"><h1><a href="/shop">В магазин</a></h1></div>
 <body>
-
     <div class="profile-form">
         <h1>Личный кабинет</h1>
         <p>Имя пользователя: {{ request.user.username }}</p>
         <p>Email: {{ request.user.email }}</p>
         <p>Номер телефона: {{ request.user.profile.phone_number }}</p>
-        <p>Дата рождения: {{ request.user.profile.birth_date }}</p>
-        <form action="{% url 'logout' %}" method="post">
-                {% csrf_token %}
-                <button class="logout" type="submit">Выйти</button>
-            </form>
+        <p>Уникальный ключ для Telegram бота: <strong>{{ profile.telegram_key }}</strong></p>
 
         {% if request.user.is_staff %}
-            <a href="/admin/">Админ меню</a>
+        <a href="/admin/" style="color: red; font-weight: bold;">Админ меню</a>
         {% endif %}
+
+        {% if request.user.profile.role == 'warehouse_manager' %}
+        <a href="{% url 'manager_statistics' %}" class="manager-statistics-btn">
+        Статистика товаров
+        </a>
+        {% endif %}
+
+        {% if request.user.profile.role == 'drone_operator' %}
+        <a href="{% url 'drone_operator_dashboard' %}" class="drone_operator_dashboard-btn">
+        Статистика заказов
+        </a>
+        {% endif %}
+
+
+        <form action="{% url 'logout' %}" method="post">
+            {% csrf_token %}
+            <button class="logout" type="submit">Выйти</button>
+        </form>
     </div>
 
     <footer>
@@ -47,13 +61,16 @@
             <h1>DroneD</h1>
         </div>
         <div id="social_media">
-             <a href="https://www.instagram.com/yourusername" target="_blank">
-             <img class="icon" src="../static/img/IN.svg" alt="Instagram Icon"></a>
-             <a href="https://www.facebook.com/yourusername" target="_blank">
-             <img class="icon" src="../static/img/FB.svg" alt="Facebook Icon"></a>
-             <a href="https://www.twitter.com/yourusername" target="_blank">
-             <img class="icon" src="../static/img/Twitter.svg" alt="Twitter Icon"></a>
-         </div>
+            <a href="https://www.instagram.com/yourusername" target="_blank">
+                <img class="icon" src="../static/img/IN.svg" alt="Instagram Icon">
+            </a>
+            <a href="https://www.facebook.com/yourusername" target="_blank">
+                <img class="icon" src="../static/img/FB.svg" alt="Facebook Icon">
+            </a>
+            <a href="https://www.twitter.com/yourusername" target="_blank">
+                <img class="icon" src="../static/img/Twitter.svg" alt="Twitter Icon">
+            </a>
+        </div>
     </footer>
 </body>
 </html>

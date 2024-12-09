@@ -6,60 +6,59 @@
     <title>Магазин</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- Подключение jQuery -->
-    <style>
-        .animated {
-            transform: scale(1.1); /* Увеличиваем элемент */
-            transition: transform 0.5s ease; /* Плавный переход */
-        }
-    </style>
+    
 </head>
 <body>
 <header>
-            <div class="logo">
-				<a href="{% url 'index' %}">
-					<img src="../static/img/logo.png" alt="logo">
-					<h1>DroneD</h1>
-				</a>
-            </div>
+    <div class="logo">
+        <a href="{% url 'index' %}">
+            <img src="../static/img/logo.png" alt="logo">
+            <h1>DroneD</h1>
+        </a>
+    </div>
 
+    <div class="authorization">
+        <div class="sl">
+            <a href="{% url 'cart_detail' %}">
+                <img class="cart" src="../static/img/cart.svg" alt="Cart Icon">
+            </a>
+            <span id="cart-count">{{ cart_count }}</span> <!-- Здесь мы отображаем начальное значение -->
+            {% if user.is_authenticated %}
+                <a href="{% url 'profile' %}">Личный кабинет</a>
+                <a href="{% url 'logout' %}">Выйти</a>
+            {% else %}
+                <a href="{% url 'login' %}">Войти</a>
+                <a href="{% url 'signup' %}">Регистрация</a>
+            {% endif %}
+        </div>
+    </div>
+</header>
 
-			<div class="authorization">
+<div class="main">
+    <div class="shop-container">
+        <div class="category-sidebar">
+            <h1>Категории</h1>
+            <ul>
+                <li><a href="{% url 'shop' %}">Все</a></li>
+                <li><a href="{% url 'shop' %}?category=fruit">Фрукты</a></li>
+                <li><a href="{% url 'shop' %}?category=treat">Лакомства</a></li>
+                <li><a href="{% url 'shop' %}?category=vegetables">Полуфабрикаты</a></li>
+                <li><a href="{% url 'shop' %}?category=meat">Мясо</a></li>
+                <li><a href="{% url 'shop' %}?category=dairy">Молочные продукты</a></li>
+                <li><a href="{% url 'shop' %}?category=bakery">Выпечка</a></li>
+                <li><a href="{% url 'shop' %}?category=beverages">Напитки</a></li>
+                <li><a href="{% url 'shop' %}?category=seafood">Морепродукты</a></li>
+            </ul>
+        </div>
 
-                <div class="sl">
-
-                    <a href="{% url 'cart_detail' %}">
-				    <img class="cart" src="../static/img/cart.svg" alt="Cart Icon"></a>
-                    <span id="cart-count">0</span>
-                {% if user.is_authenticated %}
-                    <a href="{% url 'profile' %}">Личный кабинет</a>
-                    <a href="{% url 'logout' %}">Выйти</a>
-                {% else %}
-					<a href="{% url 'login' %}">Войти</a>
-					<a href="{% url 'signup' %}">Регистрация</a>
-                    {% endif %}
-				</div>
-
-			   {% block content %}{% endblock %}
-		   </div>
-    </header>
-
-    <div class="main">
-        <div class="shop-container">
-            <div class="category-sidebar">
-                <h1>Категории</h1>
-                <ul>
-                    <li><a href="{% url 'shop' %}">Все</a></li>
-                    <li><a href="{% url 'shop' %}?category=fruit">Фрукты</a></li>
-                    <li><a href="{% url 'shop' %}?category=treat">Лакомства</a></li>
-                </ul>
-            </div>
-
-            <div class="product-list">
-                <div class="pr">
-                    {% for product in products %}
+        <div class="product-list">
+            <div class="pr">
+                {% for product in products %}
                     <div class="product-item">
                         {% if product.image %}
-                        <a href="{% url 'product_detail' product.id %}"><img src="{{ product.image.url }}" alt="{{ product.name }}" class="primg"></a>
+                            <a href="{% url 'product_detail' product.id %}">
+                                <img src="{{ product.image.url }}" alt="{{ product.name }}" class="primg">
+                            </a>
                         {% endif %}
                         <div class="product-info">
                             <h2><a href="{% url 'product_detail' product.id %}">{{ product.name }}</a></h2>
@@ -69,58 +68,74 @@
                             <button class="add-to-cart-btn" data-product-id="{{ product.id }}">Добавить в корзину</button>
                         </div>
                     </div>
-                    {% endfor %}
-                </div>
+                {% endfor %}
             </div>
         </div>
     </div>
+</div>
 
-    <script>
-        $(document).ready(function() {
-            $('.add-to-cart-btn').click(function() {
-                const productId = $(this).data('product-id'); // Получаем ID продукта
-                const url = `/add_to_cart/${productId}/`; // Формируем URL с ID продукта
-
-                $.ajax({
-                    type: 'POST',
-                    url: url,
-                    data: {
-                        'csrfmiddlewaretoken': '{{ csrf_token }}'
-                    },
-                    success: function(response) {
-                        // Увеличиваем количество товаров в корзине
-                        let cartCount = parseInt($('#cart-count').text()) + 1;
-                        $('#cart-count').text(cartCount);
-                        
-                        // Запускаем анимацию
-                        $('#cart-info').addClass('animated');
-                        setTimeout(function() {
-                            $('#cart-info').removeClass('animated');
-                        }, 1000);
-                    },
-                    error: function(response) {
-                        console.error('Ошибка:', response); // Логируем ошибку для отладки
-                        alert('Ошибка при добавлении товара в корзину. Попробуйте еще раз.');
-                    }
-                });
-            });
+<script>
+   $(document).ready(function() {
+    function updateCartCount() {
+        $.ajax({
+            url: '/cart_count/',  // URL для получения количества товаров в корзине
+            type: 'GET',
+            success: function(response) {
+                $('#cart-count').text(response.cart_count);
+            },
+            error: function(response) {
+                console.error('Ошибка при обновлении количества товаров в корзине:', response);
+            }
         });
-    </script>
+    }
+
+    // Вызываем функцию обновления счётчика при загрузке страницы
+    updateCartCount();
+    
+    $('.add-to-cart-btn').click(function() {
+        const productId = $(this).data('product-id'); // Получаем ID продукта
+        const url = `/add_to_cart/${productId}/`; // Формируем URL с ID продукта
+
+        $.ajax({
+            type: 'POST',
+            url: url,
+            data: {
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                // Обновляем количество товаров в корзине
+                $('#cart-count').text(response.cart_count);
+
+                // Запускаем анимацию
+                $('#cart-count').addClass('animated');
+                setTimeout(function() {
+                    $('#cart-count').removeClass('animated');
+                }, 1000);
+            },
+            error: function(response) {
+                console.error('Ошибка:', response); // Логируем ошибку для отладки
+                alert('Ошибка при добавлении товара в корзину. Попробуйте еще раз.');
+            }
+        });
+    });
+});
+
+</script>
+
 <footer>
-	<div class="logo">
-		<img src="../static/img/logo.png" alt="logo">
-		<h1>DroneD</h1>
+    <div class="logo">
+        <img src="../static/img/logo.png" alt="logo">
+        <h1>DroneD</h1>
     </div>
-	<div id="social_media">
-		 <a href="https://www.instagram.com/yourusername" target="_blank">
-		 <img class="icon" src="../static/img/IN.svg" alt="Instagram Icon"></a>
-		 <a href="https://www.facebook.com/yourusername" target="_blank">
-		 <img class="icon" src="../static/img/FB.svg" alt="Facebook Icon"></a>
-		 <a href="https://www.twitter.com/yourusername" target="_blank">
-		 <img class="icon" src="../static/img/Twitter.svg" alt="Twitter Icon"></a>
-	 </div>
+    <div id="social_media">
+        <a href="https://www.instagram.com/yourusername" target="_blank">
+            <img class="icon" src="../static/img/IN.svg" alt="Instagram Icon"></a>
+        <a href="https://www.facebook.com/yourusername" target="_blank">
+            <img class="icon" src="../static/img/FB.svg" alt="Facebook Icon"></a>
+        <a href="https://www.twitter.com/yourusername" target="_blank">
+            <img class="icon" src="../static/img/Twitter.svg" alt="Twitter Icon"></a>
+    </div>
 </footer>
+
 </body>
 </html>
-
-

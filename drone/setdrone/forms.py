@@ -1,8 +1,7 @@
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
 from django import forms
-from .models import Order, OrderItem, Product
-
+from .models import Order, OrderItem, Profile
 class OrderForm(forms.ModelForm):
     class Meta:
         model = Order
@@ -18,7 +17,6 @@ class OrderItemForm(forms.ModelForm):
         model = OrderItem
         fields = ['product', 'quantity']
 
-from .models import Profile  # Import your Profile model
 
 
 class SignUpForm(UserCreationForm):

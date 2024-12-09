@@ -133,8 +133,6 @@ LOGIN_REDIRECT_URL = 'index'
 LOGOUT_REDIRECT_URL = 'index'
 
 
-
-
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
@@ -142,21 +140,25 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # drone/settings.py
 
-# Настройки для Celery
-# settings.py
+#Настройки для Celery
 CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Пример для Redis
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Europe/Moscow'
-
+#Настройки для mail.ru
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.mail.ru'  # SMTP сервер Mail.ru
 EMAIL_PORT = 587  # Для безопасного соединения (TLS)
 EMAIL_USE_TLS = True  # Включение шифрования
-EMAIL_HOST_USER = ''  # Ваш адрес на Mail.ru
-EMAIL_HOST_PASSWORD = ''  # Пароль от почты
-DEFAULT_FROM_EMAIL = ''  # Почта, с которой будут отправляться письма
+EMAIL_HOST_USER = 'nikita_efimov_2003@mail.ru'  # Ваш адрес на Mail.ru
+EMAIL_HOST_PASSWORD = '8rC9QgFJ9GF9HHbP7Qbt'  # Пароль от почты
+DEFAULT_FROM_EMAIL = 'nikita_efimov_2003@mail.ru'  # Почта, с которой будут отправляться письма
 
+# settings.py
+#AUTH_USER_MODEL = 'setdrone.CustomUser'
+
+# settings.py
+TELEGRAM_BOT_TOKEN = '7828718725:AAGUxM52TejUFvzs6sDuZnC4nUEP-eUn3QY'
 
 

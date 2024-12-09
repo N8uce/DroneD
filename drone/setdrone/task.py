@@ -1,11 +1,12 @@
 # tasks.py
-from celery import shared_task
 from django.core.mail import send_mail
-from django.conf import settings
 from datetime import timedelta
 from django.utils import timezone
-from .models import Order, OrderItem
-
+from celery import shared_task
+from django.conf import settings
+import telegram
+import asyncio
+from .models import Order, Profile
 @shared_task
 def send_order_arrival_notification(order_id):
     import logging
@@ -34,3 +35,52 @@ def send_order_arrival_notification(order_id):
         logger.error(f"Заказ с ID {order_id} не найден.")
     except Exception as e:
         logger.error(f'Ошибка при обработке заказа {order_id}: {e}')
+
+
+
+# Асинхронная функция для отправки сообщения
+async def send_telegram_message(bot, chat_id, message):
+    await bot.send_message(chat_id=chat_id, text=message)
+
+@shared_task
+def send_order_telegram_notification(order_id):
+    # Получаем заказ
+    order = Order.objects.get(id=order_id)
+    # Получаем профиль пользователя, связанный с заказом
+    profile = Profile.objects.get(user=order.user)
+
+    # Ваш токен бота
+    bot = telegram.Bot(token=settings.TELEGRAM_BOT_TOKEN)
+
+    # Формирование сообщения
+    message = (
+        f"Заказ №{order.id}\n"
+        f"Адрес доставки: {order.city}, {order.street}, {order.house}\n"
+        f"Статус: {order.status}"
+    )
+
+    try:
+        # Используем asyncio.run для запуска асинхронной функции в синхронной задаче
+        asyncio.run(send_telegram_message(bot, profile.telegram_user_id, message))
+        print(f"Сообщение успешно отправлено пользователю {profile.telegram_user_id}.")
+    except Exception as e:
+        print(f"Ошибка при отправке сообщения: {e}")
+
+
+
+from celery import shared_task
+from .models import Order
+from datetime import datetime, timedelta
+
+@shared_task
+def update_order_status(order_id):
+    try:
+        order = Order.objects.get(id=order_id)
+        if order.status == 'Pending':
+            order.status = 'Completed'  # Измените статус по истечению времени
+            order.save()
+            return f"Order {order_id} updated to Completed."
+    except Order.DoesNotExist:
+        return f"Order {order_id} not found."
+
+

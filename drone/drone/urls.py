@@ -20,6 +20,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import path
 from setdrone import views
+from setdrone.views import ProductStatisticsView
 urlpatterns = [
     path('', views.index, name='index'),  # Главная страница
     path('admin/', admin.site.urls),
@@ -36,7 +37,11 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('profile/', views.profile, name='profile'),
     path('cart/update/<int:product_id>/<str:action>/', views.update_cart_item, name='update_cart_item'),
+    path('cart_count/', views.cart_count, name='cart_count'),
+    path('manager/statistics/', ProductStatisticsView.as_view(), name='manager_statistics'),
+    path('drone-operator/', views.drone_operator_dashboard, name='drone_operator_dashboard'),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
 
 
 

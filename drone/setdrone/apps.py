@@ -6,7 +6,3 @@ class SetdroneConfig(AppConfig):
 
     def ready(self):
         import setdrone.signals
-
-
-
-
