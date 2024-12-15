@@ -17,8 +17,6 @@ class OrderItemForm(forms.ModelForm):
         model = OrderItem
         fields = ['product', 'quantity']
 
-
-
 class SignUpForm(UserCreationForm):
     email = forms.EmailField(required=True)
     phone_number = forms.CharField(max_length=15, required=True)
@@ -33,7 +31,7 @@ class SignUpForm(UserCreationForm):
 
         if commit:
             user.save()
-            # Use get_or_create to avoid duplicate profile creation
+            #используется get or create, чтобы избежать дупликатов
             profile, created = Profile.objects.get_or_create(user=user)
             profile.phone_number = self.cleaned_data['phone_number']
             profile.save()

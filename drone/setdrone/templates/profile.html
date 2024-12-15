@@ -9,16 +9,15 @@
 <header>
     <div class="logo">
         <a href="{% url 'index' %}">
-            <img src="{% static "img/logo.png" %}" alt="logo">
+            <img src="{% static 'img/logo.png' %}" alt="logo">
             <h1>DroneD</h1>
         </a>
     </div>
     <div class="authorization">
         <div class="sl">
             <a href="{% url 'cart_detail' %}">
-                <img class="cart" src="{% static "img/cart.svg" %}" alt="Cart Icon">
+                <img class="cart" src="{% static 'img/cart.svg' %}" alt="Cart Icon">
             </a>
-            <span id="cart-count">0</span>
         </div>
     {% block content %}{% endblock %}
     </div>
@@ -62,14 +61,11 @@
         </div>
         <div id="social_media">
             <a href="https://www.instagram.com/yourusername" target="_blank">
-                <img class="icon" src="../static/img/IN.svg" alt="Instagram Icon">
-            </a>
+            <img class="icon" src="{% static 'img/IN.svg' %}" alt="Instagram Icon"></a>
             <a href="https://www.facebook.com/yourusername" target="_blank">
-                <img class="icon" src="../static/img/FB.svg" alt="Facebook Icon">
-            </a>
+            <img class="icon" src="{% static 'img/FB.svg' %}" alt="Facebook Icon"></a>
             <a href="https://www.twitter.com/yourusername" target="_blank">
-                <img class="icon" src="../static/img/Twitter.svg" alt="Twitter Icon">
-            </a>
+            <img class="icon" src="{% static 'img/Twitter.svg' %}" alt="Twitter Icon"></a>
         </div>
     </footer>
 </body>

@@ -3,21 +3,30 @@ from django.contrib.auth import authenticate
 from .forms import LoginForm
 from .forms import SignUpForm
 from django.contrib.auth import logout
-from django.shortcuts import redirect
-from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .models import Cart
-from django.shortcuts import render
-from .models import Order
-from django.db.models import Sum
 from django.http import JsonResponse
-from .models import Product
 import stripe
 from django.conf import settings
-from .task import send_order_arrival_notification,send_order_telegram_notification,update_order_status
-from .models import OrderItem
-from django.shortcuts import get_object_or_404
+from .task import send_order_arrival_notification, send_order_telegram_notification, update_order_status
 from .models import Profile
+from django.contrib.auth import login
+from django.views.generic import TemplateView
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.db.models import Sum
+from .models import OrderItem
+from django.contrib.auth.decorators import login_required
+from .models import Order
+from .models import ProductStatus
+from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import render
+from .models import Product
+
+
+# представление главной страницы
+def index(request):
+    return render(request, "index.html")
+
 
 def get_cart_count(request):
     cart_count = 0
@@ -25,28 +34,82 @@ def get_cart_count(request):
         cart_count = Cart.objects.filter(user=request.user).aggregate(total=Sum('quantity'))['total'] or 0
     else:
         cart = request.session.get('cart', {})
-        cart_count = sum(cart.values())
+        print("Cart session data:", cart)  # навсякий
+        cart_count = sum(item.get('quantity', 0) for item in cart.values())
     return cart_count
+
 
 def cart_count(request):
     cart_count = get_cart_count(request)
     return JsonResponse({'cart_count': cart_count})
 
-def index(request):
-    return render(request, "index.html")
 
+# представление страницы магазина
 def shop(request):
-    category = request.GET.get('category')  # Получаем категорию из параметров запроса
+    category = request.GET.get('category')
+    products = Product.objects.all()
     if category:
-        products = Product.objects.filter(product_type=category)
-    else:
-        products = Product.objects.all()  # Если категория не выбрана, выводим все товары
-    return render(request, 'shop.html', {'products': products})
+        products = products.filter(product_type__name=category)
 
+    # сортировка через order_by прям как в sql
+    products = products.order_by('name')
+    # Обновляем статус для каждого продукта
+    for product in products:
+        product.update_status()  # Обновляем статус на основе текущего количества
+        product.save()
+    # статусы для продуктов
+    product_statuses = {status.product.id: status.status for status in
+                        ProductStatus.objects.filter(product__in=products)}
+
+    return render(request, 'shop.html', {
+        'products': products,
+        'product_statuses': product_statuses,
+    })
+
+
+# представление, чтобы динамически изменять
+# на странице корзины кол-во товара в корзине
 def update_cart_item(request, product_id, action):
+    product = get_object_or_404(Product, id=product_id)
+
+    if not request.user.is_authenticated:
+        cart = request.session.get('cart', {})
+        # проверка на всякий
+        print("Cart structure:", cart)
+        if str(product_id) not in cart:
+            return JsonResponse({'success': False, 'error': 'Товар не в корзине.'}, status=400)
+
+        cart_item = cart[str(product_id)]
+        print("Cart item structure:", cart_item)
+
+        if isinstance(cart_item, int):
+            return JsonResponse({'success': False, 'error': 'С корзинной структурой что-то не так.'}, status=400)
+
+        if action == 'plus':
+            if cart_item['quantity'] < product.stock:
+                cart_item['quantity'] += 1
+                cart_item['item_total'] = cart_item['quantity'] * float(product.price)
+            else:
+                return JsonResponse({'success': False, 'error': 'Недостаточный запас.'}, status=400)
+
+        elif action == 'minus':
+            if cart_item['quantity'] > 1:
+                cart_item['quantity'] -= 1
+                cart_item['item_total'] = cart_item['quantity'] * float(product.price)
+            else:
+                return JsonResponse({'success': False, 'error': 'Достигнуто минимальное количество.'}, status=400)
+
+        cart[str(product_id)] = cart_item
+        request.session['cart'] = cart
+        return JsonResponse({
+            'success': True,
+            'new_quantity': cart_item['quantity'],
+            'new_item_total': cart_item['item_total'],
+            'updated_stock': product.stock
+        })
+
     if request.method == 'POST':
-        product = get_object_or_404(Product, id=product_id)
-        cart_item = Cart.objects.get(product=product, user=request.user)
+        cart_item = get_object_or_404(Cart, product=product, user=request.user)
 
         if action == 'plus':
             if cart_item.quantity < product.stock:
@@ -56,10 +119,10 @@ def update_cart_item(request, product_id, action):
                     'success': True,
                     'new_quantity': cart_item.quantity,
                     'new_item_total': cart_item.quantity * float(product.price),
-                    'updated_stock': product.stock  # Отправляем актуальный stock
+                    'updated_stock': product.stock
                 })
             else:
-                return JsonResponse({'success': False, 'error': 'Недостаточно товара на складе.'}, status=400)
+                return JsonResponse({'success': False, 'error': 'Недостаточный запас.'}, status=400)
 
         elif action == 'minus':
             if cart_item.quantity > 1:
@@ -69,55 +132,59 @@ def update_cart_item(request, product_id, action):
                     'success': True,
                     'new_quantity': cart_item.quantity,
                     'new_item_total': cart_item.quantity * float(product.price),
-                    'updated_stock': product.stock  # Отправляем актуальный stock
+                    'updated_stock': product.stock
                 })
             else:
-                return JsonResponse({'success': False, 'error': 'Минимальное количество товара.'}, status=400)
+                return JsonResponse({'success': False, 'error': 'Достигнуто минимальное количество.'}, status=400)
 
     return JsonResponse({'success': False, 'error': 'Неверный запрос.'}, status=400)
 
 
+# представление чтобы добавлять товары в корзину
 def add_to_cart(request, product_id):
     product = get_object_or_404(Product, id=product_id)
 
-    # Логика для авторизованных пользователей
     if request.user.is_authenticated:
         cart_item, created = Cart.objects.get_or_create(user=request.user, product=product)
         if not created:
             cart_item.quantity += 1
             cart_item.save()
     else:
-        # Для неавторизованных пользователей
         cart = request.session.get('cart', {})
         if str(product_id) in cart:
-            cart[str(product_id)] += 1  # Увеличиваем количество товара
+            cart_item = cart[str(product_id)]
+            cart_item['quantity'] += 1
+            cart_item['item_total'] = cart_item['quantity'] * float(product.price)
         else:
-            cart[str(product_id)] = 1  # Добавляем товар
-        request.session['cart'] = cart  # Сохраняем корзину в сессии
-
-    # Возвращаем актуальное количество товаров
+            cart[str(product_id)] = {
+                'quantity': 1,
+                'item_total': float(product.price)
+            }
+        request.session['cart'] = cart
     if request.user.is_authenticated:
         cart_count = Cart.objects.filter(user=request.user).aggregate(total=Sum('quantity'))['total'] or 0
     else:
-        cart_count = sum(request.session.get('cart', {}).values())
+        cart_count = sum(item['quantity'] for item in request.session.get('cart', {}).values())
 
     return JsonResponse({'cart_count': cart_count})
 
+
+# корзина
 def cart_detail(request):
     cart_items = []
-    total_price = 0  # Initialize total price
-    insufficient_stock = False  # Flag to check stock availability
-    out_of_stock_items = False  # Flag for items with stock == 0
+    total_price = 0
+    insufficient_stock = False
+    out_of_stock_items = False
 
     if request.user.is_authenticated:
         cart_items = Cart.objects.filter(user=request.user)
         cart_details = []
         for item in cart_items:
-            total_price += item.product.price * item.quantity  # Calculate total price
+            total_price += item.product.price * item.quantity
             if item.product.stock == 0:
-                out_of_stock_items = True  # Mark as out of stock
+                out_of_stock_items = True
             elif item.quantity > item.product.stock:
-                insufficient_stock = True  # Mark as insufficient stock
+                insufficient_stock = True
             cart_details.append({
                 'product': item.product,
                 'quantity': item.quantity,
@@ -126,43 +193,61 @@ def cart_detail(request):
     else:
         cart = request.session.get('cart', {})
         cart_details = []
-        for product_id, quantity in cart.items():
+        for product_id, cart_item in cart.items():
             product = get_object_or_404(Product, id=product_id)
+            quantity = cart_item['quantity']  # извлечение кол-ва из корзины очевидно...
             if product.stock == 0:
-                out_of_stock_items = True  # Mark as out of stock
+                out_of_stock_items = True
             elif quantity > product.stock:
-                insufficient_stock = True  # Mark as insufficient stock
+                insufficient_stock = True
             cart_details.append({
                 'product': product,
                 'quantity': quantity,
                 'stock': product.stock
             })
-            total_price += product.price * quantity  # Calculate total price
+            total_price += product.price * quantity
 
     return render(request, 'cart_detail.html', {
         'cart_items': cart_details,
         'total_price': total_price,
-        'insufficient_stock': insufficient_stock,  # Pass insufficient stock flag
-        'out_of_stock_items': out_of_stock_items  # Pass out-of-stock flag
+        'insufficient_stock': insufficient_stock,
+        'out_of_stock_items': out_of_stock_items
     })
+
+
 def remove_from_cart_session(request, product_id):
     cart = request.session.get('cart', {})
     if str(product_id) in cart:
-        del cart[str(product_id)]  # Удаляем товар из сессии
-    request.session['cart'] = cart  # Сохраняем обновленную корзину
+        del cart[str(product_id)]  # del товар из сессии
+    request.session['cart'] = cart  # save обновленную корзину
     return redirect('cart_detail')
+
 
 def remove_from_cart(request, product_id):
-    cart_item = get_object_or_404(Cart, user=request.user, product_id=product_id)
-    cart_item.delete()
+    if request.user.is_authenticated:
+        # работаем с корзиной в модели Cart
+        cart_item = get_object_or_404(Cart, user=request.user, product_id=product_id)
+        cart_item.delete()
+    else:
+        # работаем с корзиной в сессии
+        cart = request.session.get('cart', {})
+        if str(product_id) in cart:
+            del cart[str(product_id)]
+        request.session['cart'] = cart
+
     return redirect('cart_detail')
 
+
+# представление для доп информации о товаре
 def product_detail(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     return render(request, 'product_detail.html', {'product': product})
 
-#Ключик stripe
+
+# Ключик stripe
 stripe.api_key = settings.STRIPE_SECRET_KEY
+
+
 def order_from_cart(request):
     if request.user.is_authenticated:
         cart_items = Cart.objects.filter(user=request.user)
@@ -176,26 +261,25 @@ def order_from_cart(request):
 
             if city and street and house and token:
                 try:
-                    # Платежная обработка
+                    # Платежная обработка, наверное
                     charge = stripe.Charge.create(
-                        amount=int(total_price * 100),  # Amount in cents
+                        amount=int(total_price * 100),
                         currency='rub',
                         description='Order charge',
                         source=token,
                     )
-
-                    # Создание основного заказа
+                    # cоздание заказа
                     order = Order.objects.create(
                         user=request.user,
                         city=city,
                         street=street,
                         house=house,
-                        status="Pending"
+                        status="В процессе"
                     )
 
-                    # Создание товаров для заказа (OrderItem) и уменьшение количества на складе
+                    # cоздание товаров для заказа (OrderItem) и уменьшение количества на складе
                     for item in cart_items:
-                        # Проверяем доступное количество на складе
+                        # проверка доступного кол-во на складе
                         if item.quantity > item.product.stock:
                             messages.error(request, f"Недостаточно товара '{item.product.name}' на складе.")
                             return redirect('cart_detail')
@@ -206,19 +290,18 @@ def order_from_cart(request):
                             quantity=item.quantity
                         )
 
-                        # Уменьшаем количество товара на складе
+                        # -кол-ва товара на складе
                         item.product.stock -= item.quantity
                         item.product.save()
 
+                    # Задачи для celery
+                    update_order_status.apply_async((order.id,), countdown=60)  # таймер на минуту
+                    send_order_arrival_notification.apply_async(args=[order.id], countdown=60)
+                    send_order_telegram_notification.apply_async(args=[order.id], countdown=60)
 
-                    # Запуск задач (опционально)
-                    update_order_status.apply_async((order.id,), countdown=60)  # Таймер на 20 минут
-                    # send_order_arrival_notification.apply_async(args=[order.id], countdown=60)
-                    # send_order_telegram_notification.apply_async(args=[order.id], countdown=60)
-
-                    cart_items.delete()  # Очистить корзину после заказа
+                    cart_items.delete()  # очистка корзины после заказа
                     messages.success(request, 'Спасибо за ваш заказ!')
-                    return redirect('order_confirmation', order_id=order.id)  # Перенаправление на страницу подтверждения заказа
+                    return redirect('order_confirmation', order_id=order.id)
 
                 except stripe.error.StripeError as e:
                     messages.error(request, f'Ошибка при обработке платежа: {e}')
@@ -233,27 +316,42 @@ def order_from_cart(request):
         return redirect('login')
 
 
-
+# представление страницы подтверждения заказа
 def order_confirmation(request, order_id):
     order = get_object_or_404(Order, id=order_id)
     return render(request, 'order_confirmation.html', {'order': order})
+
 
 def signup(request):
     if request.method == 'POST':
         form = SignUpForm(request.POST)
         if form.is_valid():
             user = form.save()
-            user.refresh_from_db()  # Обновить данные пользователя
+            user.refresh_from_db()
             user.email = form.cleaned_data.get('email')
             user.profile.phone_number = form.cleaned_data.get('phone_number')
             user.save()
-            login(request, user)
+            login(request, user)  # авторизация
+            # перенос корзины из сессии в корзину авторизованного пользователя
+            if 'cart' in request.session:
+                cart_session = request.session['cart']
+                for product_id, quantity in cart_session.items():
+                    product = Product.objects.get(id=product_id)
+                    cart_item, created = Cart.objects.get_or_create(user=user, product=product)
+                    if created:
+                        cart_item.quantity = quantity
+                    else:
+                        cart_item.quantity += quantity
+                    cart_item.save()
+
+                # Очисточка -_- корзины в сессии после переноса
+                del request.session['cart']
+
             return redirect('index')
     else:
         form = SignUpForm()
     return render(request, 'signup.html', {'form': form})
 
-from django.contrib.auth import login
 
 def login_view(request):
     if request.method == 'POST':
@@ -262,38 +360,36 @@ def login_view(request):
             user = authenticate(username=form.cleaned_data['username'], password=form.cleaned_data['password'])
             if user is not None:
                 login(request, user)
-                # Перенос корзины из сессии в корзину авторизованного пользователя
+                # перенос корзины из сессии в корзину авторизованного пользователя
                 if 'cart' in request.session:
                     cart_session = request.session['cart']
-                    for product_id, quantity in cart_session.items():
+                    for product_id, cart_item in cart_session.items():
                         product = Product.objects.get(id=product_id)
-                        cart_item, created = Cart.objects.get_or_create(user=user, product=product)
+                        quantity = cart_item['quantity']  # Extract quantity from dictionary
+                        cart_db_item, created = Cart.objects.get_or_create(user=user, product=product)
                         if created:
-                            cart_item.quantity = quantity
+                            cart_db_item.quantity = quantity
                         else:
-                            cart_item.quantity += quantity
-                        cart_item.save()
-                    # Очищаем корзину в сессии после переноса
+                            cart_db_item.quantity += quantity
+                        cart_db_item.save()
+                    # Очистка корзины из сессии после входа в аккаунт
                     del request.session['cart']
                 return redirect('index')
     else:
         form = LoginForm()
     return render(request, 'login.html', {'form': form})
 
+
 def logout_view(request):
     logout(request)
     return redirect('index')
+
 
 @login_required
 def profile(request):
     profile = Profile.objects.get(user=request.user)
     return render(request, 'profile.html', {'profile': profile})
 
-
-from django.views.generic import TemplateView
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.db.models import Sum
-from .models import Product, OrderItem
 
 class ProductStatisticsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     template_name = 'manager_statistics.html'
@@ -312,32 +408,12 @@ class ProductStatisticsView(LoginRequiredMixin, UserPassesTestMixin, TemplateVie
         return OrderItem.objects.filter(product=product).aggregate(total_sold=Sum('quantity'))['total_sold'] or 0
 
 
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
-from .models import Order
-
-
-from django.db.models import Q
-
 @login_required
 def drone_operator_dashboard(request):
     current_orders = Order.objects.prefetch_related('orderitem_set__product').filter(
-        status__in=['Pending', 'Completed']
+        status__in=['В процессе', 'Завершён']
     )
     context = {
         'current_orders': current_orders,
     }
     return render(request, 'drone_operator_dashboard.html', context)
-
-
-
-
-
-
-
-
-
-
-
-
-

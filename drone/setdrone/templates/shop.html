@@ -1,18 +1,19 @@
 <!DOCTYPE html>
 {% load static %}
+{% load custom_filters %}
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <title>Магазин</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- Подключение jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     
 </head>
 <body>
 <header>
     <div class="logo">
         <a href="{% url 'index' %}">
-            <img src="../static/img/logo.png" alt="logo">
+            <img src="{% static 'img/logo.png' %}" alt="logo">
             <h1>DroneD</h1>
         </a>
     </div>
@@ -20,9 +21,9 @@
     <div class="authorization">
         <div class="sl">
             <a href="{% url 'cart_detail' %}">
-                <img class="cart" src="../static/img/cart.svg" alt="Cart Icon">
+                <img class="cart" src="{% static 'img/cart.svg' %}" alt="Cart Icon">
             </a>
-            <span id="cart-count">{{ cart_count }}</span> <!-- Здесь мы отображаем начальное значение -->
+            <span id="cart-count">{{ cart_count }}</span> <!--начальное значение -->
             {% if user.is_authenticated %}
                 <a href="{% url 'profile' %}">Личный кабинет</a>
                 <a href="{% url 'logout' %}">Выйти</a>
@@ -39,36 +40,48 @@
         <div class="category-sidebar">
             <h1>Категории</h1>
             <ul>
-                <li><a href="{% url 'shop' %}">Все</a></li>
-                <li><a href="{% url 'shop' %}?category=fruit">Фрукты</a></li>
-                <li><a href="{% url 'shop' %}?category=treat">Лакомства</a></li>
-                <li><a href="{% url 'shop' %}?category=vegetables">Полуфабрикаты</a></li>
-                <li><a href="{% url 'shop' %}?category=meat">Мясо</a></li>
-                <li><a href="{% url 'shop' %}?category=dairy">Молочные продукты</a></li>
-                <li><a href="{% url 'shop' %}?category=bakery">Выпечка</a></li>
-                <li><a href="{% url 'shop' %}?category=beverages">Напитки</a></li>
-                <li><a href="{% url 'shop' %}?category=seafood">Морепродукты</a></li>
+                <li><a href="{% url 'shop' %}" class="{% if not request.GET.category %}active{% endif %}">Все</a></li>
+                <li><a href="{% url 'shop' %}?category=Фрукты" class="{% if request.GET.category == 'Фрукты' %}active{% endif %}">Фрукты</a></li>
+                <li><a href="{% url 'shop' %}?category=Лакомства" class="{% if request.GET.category == 'Лакомства' %}active{% endif %}">Лакомства</a></li>
+                <li><a href="{% url 'shop' %}?category=Полуфабрикаты" class="{% if request.GET.category == 'Полуфабрикаты' %}active{% endif %}">Полуфабрикаты</a></li>
+                <li><a href="{% url 'shop' %}?category=Овощи" class="{% if request.GET.category == 'Овощи' %}active{% endif %}">Овощи</a></li>
+                <li><a href="{% url 'shop' %}?category=Мясо" class="{% if request.GET.category == 'Мясо' %}active{% endif %}">Мясо</a></li>
+                <li><a href="{% url 'shop' %}?category=Молочные продукты" class="{% if request.GET.category == 'Молочные продукты' %}active{% endif %}">Молочные продукты</a></li>
+                <li><a href="{% url 'shop' %}?category=Выпечка" class="{% if request.GET.category == 'Выпечка' %}active{% endif %}">Выпечка</a></li>
+                <li><a href="{% url 'shop' %}?category=Напитки" class="{% if request.GET.category == 'Напитки' %}active{% endif %}">Напитки</a></li>
+                <li><a href="{% url 'shop' %}?category=Морепродукты" class="{% if request.GET.category == 'Морепродукты' %}active{% endif %}">Морепродукты</a></li>
             </ul>
+            
+            
+            
         </div>
 
         <div class="product-list">
             <div class="pr">
-                {% for product in products %}
-                    <div class="product-item">
-                        {% if product.image %}
-                            <a href="{% url 'product_detail' product.id %}">
-                                <img src="{{ product.image.url }}" alt="{{ product.name }}" class="primg">
-                            </a>
-                        {% endif %}
-                        <div class="product-info">
-                            <h2><a href="{% url 'product_detail' product.id %}">{{ product.name }}</a></h2>
-                            <p>{{ product.description }}</p>
-                            <p>Цена: {{ product.price }} ₽</p>
-                            <p>Тип: {{ product.get_product_type_display }}</p>
-                            <button class="add-to-cart-btn" data-product-id="{{ product.id }}">Добавить в корзину</button>
+                {% if products %}
+                    {% for product in products %}
+                        <div class="product-item">
+                            {% if product.image %}
+                                <a href="{% url 'product_detail' product.id %}">
+                                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="primg">
+                                </a>
+                            {% endif %}
+                            <div class="product-info">
+                                <h2><a href="{% url 'product_detail' product.id %}">{{ product.name }}</a></h2>
+                                <p>Цена: {{ product.price }} ₽</p>
+                                <p>Тип: {{ product.product_type.name }}</p>
+                                <p>Статус: 
+                                    <strong>{{ product_statuses|get_item:product.id }}</strong>
+                                </p>                                
+            
+                                <button class="add-to-cart-btn" data-product-id="{{ product.id }}">Добавить в корзину</button>
+
+                            </div>
                         </div>
-                    </div>
-                {% endfor %}
+                    {% endfor %}
+                {% else %}
+                    <p>Товары в этой категории не найдены.</p>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -78,7 +91,7 @@
    $(document).ready(function() {
     function updateCartCount() {
         $.ajax({
-            url: '/cart_count/',  // URL для получения количества товаров в корзине
+            url: '/cart_count/', // URL для получения количества товаров в корзине
             type: 'GET',
             success: function(response) {
                 $('#cart-count').text(response.cart_count);
@@ -89,12 +102,12 @@
         });
     }
 
-    // Вызываем функцию обновления счётчика при загрузке страницы
+    //обновления счётчика при загрузке страницы
     updateCartCount();
     
     $('.add-to-cart-btn').click(function() {
-        const productId = $(this).data('product-id'); // Получаем ID продукта
-        const url = `/add_to_cart/${productId}/`; // Формируем URL с ID продукта
+        const productId = $(this).data('product-id'); 
+        const url = `/add_to_cart/${productId}/`;
 
         $.ajax({
             type: 'POST',
@@ -103,17 +116,15 @@
                 'csrfmiddlewaretoken': '{{ csrf_token }}'
             },
             success: function(response) {
-                // Обновляем количество товаров в корзине
                 $('#cart-count').text(response.cart_count);
 
-                // Запускаем анимацию
                 $('#cart-count').addClass('animated');
                 setTimeout(function() {
                     $('#cart-count').removeClass('animated');
                 }, 1000);
             },
             error: function(response) {
-                console.error('Ошибка:', response); // Логируем ошибку для отладки
+                console.error('Ошибка:', response);
                 alert('Ошибка при добавлении товара в корзину. Попробуйте еще раз.');
             }
         });
@@ -124,18 +135,17 @@
 
 <footer>
     <div class="logo">
-        <img src="../static/img/logo.png" alt="logo">
+        <img src="{% static 'img/logo.png' %}" alt="logo">
         <h1>DroneD</h1>
     </div>
     <div id="social_media">
         <a href="https://www.instagram.com/yourusername" target="_blank">
-            <img class="icon" src="../static/img/IN.svg" alt="Instagram Icon"></a>
+        <img class="icon" src="{% static 'img/IN.svg' %}" alt="Instagram Icon"></a>
         <a href="https://www.facebook.com/yourusername" target="_blank">
-            <img class="icon" src="../static/img/FB.svg" alt="Facebook Icon"></a>
+        <img class="icon" src="{% static 'img/FB.svg' %}" alt="Facebook Icon"></a>
         <a href="https://www.twitter.com/yourusername" target="_blank">
-            <img class="icon" src="../static/img/Twitter.svg" alt="Twitter Icon"></a>
+        <img class="icon" src="{% static 'img/Twitter.svg' %}" alt="Twitter Icon"></a>
     </div>
 </footer>
-
 </body>
 </html>

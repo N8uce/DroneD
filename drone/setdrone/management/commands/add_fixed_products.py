@@ -1,10 +1,21 @@
 from django.core.management.base import BaseCommand
-from setdrone.models import Product
+from setdrone.models import Product, ProductType
 
 class Command(BaseCommand):
-    help = 'Add fixed products to the database'
-
+    help = 'Добавление товаров по бырому'
     def handle(self, *args, **kwargs):
+        product_types = {
+            'fruit': ProductType.objects.get_or_create(name='Фрукты')[0],
+            'treat': ProductType.objects.get_or_create(name='Лакомства')[0],
+            'semi': ProductType.objects.get_or_create(name='Полуфабрикаты')[0],
+            'vegetables': ProductType.objects.get_or_create(name='Овощи')[0],
+            'meat': ProductType.objects.get_or_create(name='Мясо')[0],
+            'dairy': ProductType.objects.get_or_create(name='Молочные продукты')[0],
+            'bakery': ProductType.objects.get_or_create(name='Выпечка')[0],
+            'beverages': ProductType.objects.get_or_create(name='Напитки')[0],
+            'seafood': ProductType.objects.get_or_create(name='Морепродукты')[0],
+        }
+
         products = [
             {'name': 'Яблоки', 'description': 'Свежие яблоки с фермы.', 'price': 100.00, 'stock': 50, 'product_type': 'fruit'},
             {'name': 'Бананы', 'description': 'Спелые бананы из Эквадора.', 'price': 120.00, 'stock': 40, 'product_type': 'fruit'},
@@ -24,7 +35,7 @@ class Command(BaseCommand):
                 description=product['description'],
                 price=product['price'],
                 stock=product['stock'],
-                product_type=product['product_type']
+                product_type=product_types[product['product_type']]
             )
 
         self.stdout.write(self.style.SUCCESS('Successfully added fixed products.'))

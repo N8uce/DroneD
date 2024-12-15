@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <title>Корзина</title>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script> <!-- Подключаем jQuery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 </head>
 
 <body>
@@ -34,12 +34,12 @@
 
 <div class="back-to-shop"><h1><a href="{% url 'shop' %}">В магазин</a></h1></div>
 
-{% if cart_items %}  
+{% if cart_items %}
 <div class="cart-details">
-   
-    <h1>Ваша корзина</h1>
+
 
     <div class="cart-list">
+        <h1>Ваша корзина</h1>
         {% for item in cart_items %}
         <div class="cart-item" data-product-id="{{ item.product.id }}" data-stock="{{ item.product.stock }}">
             <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="primg">
@@ -56,22 +56,16 @@
                     {% endif %}
                 </p>
                 {% endif %}
-        
+                <p>В корзине <span class="quantity">{{item.quantity }}</span> шт.</p>
                 <div class="quantity-buttons">
-                    <!-- Кнопка уменьшения -->
+
                     <button class="btn-minus" {% if item.quantity <= 1 %} disabled {% endif %}>-</button>
-                    
-                    <!-- Кнопка увеличения -->
                     <button class="btn-plus" {% if item.quantity >= item.stock %} disabled {% endif %}>+</button>
 
                 </div>
-
-                 <!-- Отображение текущего количества товара -->
-                    <span class="quantity">{{item.quantity }}</span>
-        
                 <form action="{% url 'remove_from_cart' item.product.id %}" method="post">
                     {% csrf_token %}
-                    <button type="submit">Удалить</button>
+                    <button class="delete-btn" type="submit">Удалить</button>
                 </form>
             </div>
         </div>
@@ -79,8 +73,8 @@
         
         {% endfor %}
     </div>
-    <div>
-        <p>Общая сумма: <span id="total-price">{{ total_price }}</span> ₽</p>
+    <div class="total-cost">
+        <p>Общая сумма: <span id="total-price">{{ total_price }}</span>₽</p>
     
         {% if not insufficient_stock and not out_of_stock_items %}
         <form action="{% url 'order_from_cart' %}" method="post">
@@ -100,11 +94,11 @@
 
     
 </div>
-    {% else %}
+{% else %}
 <div class="empty_cart">
     <h1>Ваша корзина пуста</h1>
      <a href="{% url 'shop' %}"><img class="sad-cart" src="{% static 'img/empty-cart.jpg' %}" alt="Empty cart"></a>
-  
+
 </div>
 
     {% endif %}
@@ -177,11 +171,12 @@ $(document).ready(function () {
                         $cartItem.find('.quantity').text(response.new_quantity);
                         $cartItem.find('.item-total').text(response.new_item_total.toFixed(2));
                         updateTotalPrice();
-                        updateButtonState($cartItem); // Обновляем состояние кнопок
+                        updateButtonState($cartItem);
                     }
                 },
                 error: function (xhr) {
-                    alert(xhr.responseJSON.error || 'Произошла ошибка.');
+                    const errorMessage = xhr.responseJSON && xhr.responseJSON.error ? xhr.responseJSON.error : 'An unexpected error occurred.';
+                    alert(errorMessage);
                 }
             });
         });
@@ -206,17 +201,17 @@ $(document).ready(function () {
                         $cartItem.find('.quantity').text(response.new_quantity);
                         $cartItem.find('.item-total').text(response.new_item_total.toFixed(2));
                         updateTotalPrice();
-                        updateButtonState($cartItem); // Обновляем состояние кнопок
+                        updateButtonState($cartItem);
                     }
                 },
                 error: function (xhr) {
-                    alert(xhr.responseJSON.error || 'Произошла ошибка.');
+                    const errorMessage = xhr.responseJSON && xhr.responseJSON.error ? xhr.responseJSON.error : 'An unexpected error occurred.';
+                    alert(errorMessage);
                 }
             });
         });
     }
 
-    // Привязываем события при загрузке страницы
     bindButtonEvents();
     updateTotalPrice();
 });

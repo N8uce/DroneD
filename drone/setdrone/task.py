@@ -1,27 +1,27 @@
 # tasks.py
 from django.core.mail import send_mail
-from datetime import timedelta
 from django.utils import timezone
-from celery import shared_task
 from django.conf import settings
 import telegram
 import asyncio
-from .models import Order, Profile
+from .models import Profile
+from celery import shared_task
+from .models import Order
+from datetime import timedelta
+
 @shared_task
 def send_order_arrival_notification(order_id):
     import logging
-
-    logger = logging.getLogger(__name__)  # Логирование
-
+    logger = logging.getLogger(__name__)
     try:
-        # Получаем заказ по ID
+        # заказ по ID
         order = Order.objects.get(id=order_id)
         logger.info(f"Обработка заказа {order.id}")
 
-        # Проверяем, прошла ли минута с момента оформления
+        # Проверка, прошла ли минута с момента оформления (нужно ли?)
         time_diff = timezone.now() - order.ordered_at
         if time_diff >= timedelta(minutes=1):
-            # Отправляем email уведомление
+            # отправка email уведомления
             subject = "Ваш заказ прибыл!"
             message = f"Ваш заказ №{order.id} прибыл по адресу: {order.city}, {order.street}, {order.house}"
             from_email = settings.DEFAULT_FROM_EMAIL
@@ -44,15 +44,13 @@ async def send_telegram_message(bot, chat_id, message):
 
 @shared_task
 def send_order_telegram_notification(order_id):
-    # Получаем заказ
+    # заказ
     order = Order.objects.get(id=order_id)
-    # Получаем профиль пользователя, связанный с заказом
+    # профиль пользователя, связанный с заказом
     profile = Profile.objects.get(user=order.user)
-
-    # Ваш токен бота
+    # токен
     bot = telegram.Bot(token=settings.TELEGRAM_BOT_TOKEN)
 
-    # Формирование сообщения
     message = (
         f"Заказ №{order.id}\n"
         f"Адрес доставки: {order.city}, {order.street}, {order.house}\n"
@@ -60,27 +58,22 @@ def send_order_telegram_notification(order_id):
     )
 
     try:
-        # Используем asyncio.run для запуска асинхронной функции в синхронной задаче
+        # asyncio.run для асинхронной функции в синхронной задаче
         asyncio.run(send_telegram_message(bot, profile.telegram_user_id, message))
         print(f"Сообщение успешно отправлено пользователю {profile.telegram_user_id}.")
     except Exception as e:
         print(f"Ошибка при отправке сообщения: {e}")
 
 
-
-from celery import shared_task
-from .models import Order
-from datetime import datetime, timedelta
-
 @shared_task
 def update_order_status(order_id):
     try:
         order = Order.objects.get(id=order_id)
-        if order.status == 'Pending':
-            order.status = 'Completed'  # Измените статус по истечению времени
+        if order.status == 'В процессе':
+            order.status = 'Завершён'  # И змените статус по истечению времени
             order.save()
-            return f"Order {order_id} updated to Completed."
+            return f"Заказ {order_id} обновлён до статуса завершён."
     except Order.DoesNotExist:
-        return f"Order {order_id} not found."
+        return f"Заказ {order_id} не найден."
 
 

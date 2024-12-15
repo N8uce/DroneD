@@ -10,10 +10,12 @@
 
 <body>
     <header>
-            <div class="logo">
-				<img src="../static/img/logo.png" alt="logo">
+		<div class="logo">
+			<a href="{% url 'index' %}">
+				<img src="{% static 'img/logo.png' %}" alt="logo">
 				<h1>DroneD</h1>
-            </div>
+			</a>
+		</div>
 			<div class="authorization">
             {% if user.is_authenticated %}
 				<div class="sl">
@@ -32,12 +34,12 @@
 
     <div class="video-background">
         <video autoplay muted loop id="myVideo">
-            <source src="../static/video/back.mp4" type="video/mp4">
+            <source src="{% static 'video/back.mp4' %}" type="video/mp4">
             Ваш браузер не поддерживает видео.
         </video>
         <div class="overlay-content">
 			<div class="logo">
-				<img src="../static/img/logo.png" alt="logo">    
+				<img src="{% static 'img/logo.png' %}" alt="logo">    
 				<h1>DroneD</h1> 
 			</div>
 			Добро пожаловать в DroneD! Ваши любимые продукты—теперь в небе! Откройте для себя будущее покупок сегодня с DroneD!
@@ -54,31 +56,28 @@
 благодаря уникальной доставке дронами. Забыли купить что-то важное? Закажите, и наш дрон доставит это к вашей
 двери в считанные минуты.</p>
 </div>
-<img id="drone" src="../static/img/drone.jpg" alt="drone">
+<img id="drone" src="{% static 'img/drone.jpg' %}" alt="drone">
 </div>    
 <hr>
 <div class="how_works">
-	<h1>Как мы работаем</h1>
+	<h1>Как мы работаем?</h1>
 	<div class="stages">
 		<div class="stage">
 		<h2>Укажите свое местоположение</h2>
-		<p>Ищите свою улицу в списке. Наши дроны быстро доставят вам груз.
-		Вашей улицы еще нет в списке? Оставьте отзыв, мы всегда готовы расширятся!</p>
+		<p>Ищите свою улицу в списке. Наши дроны быстро доставят вам груз.</p>
 		</div>
 		<div class="stage">
 		<h2>Приготовьтесь к доставке</h2>
 		<p>Мы определим место доставки и поместим посылку в наиболее безопасное
 		место как для вас, так и для беспилотника. 
 		Так же убедитесь, что на вашем участке нет препятствий.
-		Мы отправим вам текстовые сообщения, чтобы сообщить,
-		что мы уже в пути, и убедиться, что вы готовы получить заказ.</p>
+		Мы отправим вам текстовые сообщения, когда товар будет уже возле вашего дома.</p>
 		</div>
 		<div class="stage">
 		<h2>Забирайте свой заказ</h2>
 		<p>
-		Наши дроны запрограммированы таким образом, чтобы он опускал посылки 
-		с высоты 80 футов! Благодаря датчикам и очень прочным тросам посылки
-		весом до 10 фунтов доставляются аккуратно, а затем дрон плавно
+		Благодаря датчикам и очень прочным тросам посылки
+		доставляются аккуратно, а затем дрон плавно
 		поднимается и улетает.
 		Службы доставки могут быть временно недоступны из-за сильного ветра 
 		или других неблагоприятных погодных условий в вашем регионе,
@@ -110,16 +109,16 @@
 </div>
 <footer>
 	<div class="logo">
-		<img src="../static/img/logo.png" alt="logo">
+		<img src="{% static 'img/logo.png' %}" alt="logo">
 		<h1>DroneD</h1>
     </div>
 	<div id="social_media">
 		 <a href="https://www.instagram.com/yourusername" target="_blank">
-		 <img class="icon" src="../static/img/IN.svg" alt="Instagram Icon"></a>
+		 <img class="icon" src="{% static 'img/IN.svg' %}" alt="Instagram Icon"></a>
 		 <a href="https://www.facebook.com/yourusername" target="_blank">
-		 <img class="icon" src="../static/img/FB.svg" alt="Facebook Icon"></a>
+		 <img class="icon" src="{% static 'img/FB.svg' %}" alt="Facebook Icon"></a>
 		 <a href="https://www.twitter.com/yourusername" target="_blank">
-		 <img class="icon" src="../static/img/Twitter.svg" alt="Twitter Icon"></a>
+		 <img class="icon" src="{% static 'img/Twitter.svg' %}" alt="Twitter Icon"></a>
 	 </div>
 </footer>
 </body>

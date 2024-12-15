@@ -33,7 +33,7 @@
         </thead>
         <tbody>
             {% for order in current_orders %}
-            {% if order.status == 'Pending' %}
+            {% if order.status == 'В процессе' %}
             <tr>
                 <td>{{ order.id }}</td>
                 <td>
@@ -63,7 +63,7 @@
         </thead>
         <tbody>
             {% for order in current_orders %}
-            {% if order.status == 'Completed' %}
+            {% if order.status == 'Завершён' %}
             <tr>
                 <td>{{ order.id }}</td>
                 <td>

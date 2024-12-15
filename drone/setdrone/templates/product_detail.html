@@ -5,48 +5,19 @@
     <meta charset="UTF-8">
     <title>{{ product.name }}</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
-    <script src="{% static 'js/jquery.min.js' %}"></script>
-    <script>
-        $(document).ready(function() {
-            $('form').on('submit', function(event) {
-                event.preventDefault(); // Останавливаем обычное отправление формы
-
-                const form = $(this);
-                const url = form.attr('action'); // Получаем URL из атрибута action
-                const data = form.serialize(); // Сериализуем данные формы
-
-                $.ajax({
-                    type: 'POST',
-                    url: url,
-                    data: data,
-                    success: function(response) {
-                        // Обновляем текст кнопки или добавляем уведомление
-                        $('#add-to-cart-button').text('Товар добавлен в корзину');
-                        // Можно также обновить количество товаров в корзине
-                        $('#total-cart-count').text(parseInt($('#total-cart-count').text()) + 1);
-                    },
-                    error: function() {
-                        alert('Ошибка при добавлении товара в корзину.');
-                    }
-                });
-            });
-        });
-    </script>
 </head>
 <body>
 <header>
             <div class="logo">
 				<a href="{% url 'index' %}">
-					<img src="{% static "img/logo.png" %}" alt="logo">
+					<img src="{% static 'img/logo.png' %}" alt="logo">
 					<h1>DroneD</h1>
 				</a>
             </div>
 			<div class="authorization">
                <div class="sl">
 
-                    <a href="{% url 'cart_detail' %}">
-				    <img class="cart" src="{% static "img/cart.svg" %}" alt="Cart Icon"></a>
-                    <span id="cart-count">0</span>
+    
                 {% if user.is_authenticated %}
                     <a href="{% url 'profile' %}">Личный кабинет</a>
                     <a href="{% url 'logout' %}">Выйти</a>
@@ -76,16 +47,16 @@
 </div>
 <footer>
 	<div class="logo">
-		<img src="{% static "img/logo.png" %}" alt="logo">
+		<img src="{% static 'img/logo.png' %}" alt="logo">
 		<h1>DroneD</h1>
     </div>
 	<div id="social_media">
 		 <a href="https://www.instagram.com/yourusername" target="_blank">
-		 <img class="icon" src="{% static "img/IN.svg" %}" alt="Instagram Icon"></a>
+		 <img class="icon" src="{% static 'img/IN.svg' %}" alt="Instagram Icon"></a>
 		 <a href="https://www.facebook.com/yourusername" target="_blank">
-		 <img class="icon" src="{% static "img/FB.svg" %}" alt="Facebook Icon"></a>
+		 <img class="icon" src="{% static 'img/FB.svg' %}" alt="Facebook Icon"></a>
 		 <a href="https://www.twitter.com/yourusername" target="_blank">
-		 <img class="icon" src="{% static "img/Twitter.svg" %}" alt="Twitter Icon"></a>
+		 <img class="icon" src="{% static 'img/Twitter.svg' %}" alt="Twitter Icon"></a>
 	 </div>
 </footer>
 </body>
