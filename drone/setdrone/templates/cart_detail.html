@@ -76,21 +76,20 @@
     <div class="total-cost">
         <p>Общая сумма: <span id="total-price">{{ total_price }}</span>₽</p>
     
-        {% if not insufficient_stock and not out_of_stock_items %}
-        <form action="{% url 'order_from_cart' %}" method="post">
+        <form id="order-form" action="{% url 'order_from_cart' %}" method="post" {% if insufficient_stock or out_of_stock_items %}style="display:none"{% endif %}>
             {% csrf_token %}
             <button class="make-order-btn" type="submit">Оформить заказ</button>
         </form>
-        {% else %}
-        <p class="error">
+        <p id="error-message" class="error" style="display:none;">
             {% if out_of_stock_items %}
                 В корзине есть товары, которые отсутствуют на складе. Пожалуйста, удалите их перед заказом.
             {% elif insufficient_stock %}
                 В корзине есть товары, которых недостаточно на складе. Пожалуйста, измените их количество перед заказом.
             {% endif %}
         </p>
-        {% endif %}
     </div>
+    
+    
 
     
 </div>
@@ -121,7 +120,7 @@
 <script>
 $(document).ready(function () {
     console.log('Cart script loaded');
-    
+
     function updateTotalPrice() {
         let total = 0;
         $('.cart-item').each(function () {
@@ -148,9 +147,33 @@ $(document).ready(function () {
         }
     }
 
+    function checkStockStatus() {
+        let insufficientStock = false;
+        let outOfStockItems = false;
+
+        $('.cart-item').each(function () {
+            let quantity = parseInt($(this).find('.quantity').text());
+            let stock = parseInt($(this).data('stock'));
+
+            if (stock === 0) {
+                outOfStockItems = true;
+            } else if (quantity > stock) {
+                insufficientStock = true;
+            }
+        });
+
+        if (outOfStockItems || insufficientStock) {
+            $('#order-form').hide();
+            $('#error-message').show();
+        } else {
+            $('#order-form').show();
+            $('#error-message').hide();
+        }
+    }
+
     function bindButtonEvents() {
         console.log('Binding button events');
-        
+
         $('.btn-plus').off('click').on('click', function () {
             console.log('Plus button clicked');
             let $cartItem = $(this).closest('.cart-item');
@@ -172,6 +195,7 @@ $(document).ready(function () {
                         $cartItem.find('.item-total').text(response.new_item_total.toFixed(2));
                         updateTotalPrice();
                         updateButtonState($cartItem);
+                        checkStockStatus();
                     }
                 },
                 error: function (xhr) {
@@ -202,6 +226,7 @@ $(document).ready(function () {
                         $cartItem.find('.item-total').text(response.new_item_total.toFixed(2));
                         updateTotalPrice();
                         updateButtonState($cartItem);
+                        checkStockStatus(); 
                     }
                 },
                 error: function (xhr) {
@@ -214,9 +239,8 @@ $(document).ready(function () {
 
     bindButtonEvents();
     updateTotalPrice();
+    checkStockStatus();
 });
-
-
 
 </script>
 
