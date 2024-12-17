@@ -20,10 +20,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-pj8&nb%@7#d66b)x14jo5r(x)^^)q0zi4jvz6(0(a-@u6@szwv"
+SECRET_KEY = ""
 # settings.py
-STRIPE_PUBLISHABLE_KEY = 'pk_test_51QE73wJ53brjUdQgbKYUWNB04DGiDVaeFevWLAJip87Y9tMJ7Of9rGb0FZokSeaEGGscK3hAHmb7fQFDNY1GgTfC00gLo2tPnK'
-STRIPE_SECRET_KEY = 'sk_test_51QE73wJ53brjUdQgodIczpXgju8WARZ8hh8HGVeRbR22H5UW2yZUq9bvHmrTgytz5CVQ4qLQOUNd76jHZSHQLcIx00v6zfAQgq'
+STRIPE_PUBLISHABLE_KEY = ''
+STRIPE_SECRET_KEY = ''
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -152,11 +152,11 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.mail.ru'  # SMTP сервер Mail.ru
 EMAIL_PORT = 587  # Для безопасного соединения (TLS)
 EMAIL_USE_TLS = True  # Включение шифрования
-EMAIL_HOST_USER = 'nikita_efimov_2003@mail.ru'  # адрес на Mail.ru
-EMAIL_HOST_PASSWORD = '8rC9QgFJ9GF9HHbP7Qbt'  # Пароль от почты
-DEFAULT_FROM_EMAIL = 'nikita_efimov_2003@mail.ru'  # Почта, с которой будут отправляться письма
+EMAIL_HOST_USER = ''  # адрес на Mail.ru
+EMAIL_HOST_PASSWORD = ''  # Пароль от почты
+DEFAULT_FROM_EMAIL = ''  # Почта, с которой будут отправляться письма
 
 # settings.py
-TELEGRAM_BOT_TOKEN = '7828718725:AAGUxM52TejUFvzs6sDuZnC4nUEP-eUn3QY'
+TELEGRAM_BOT_TOKEN = ''
 
 
